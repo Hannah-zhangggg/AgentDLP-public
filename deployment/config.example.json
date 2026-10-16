@@ -1,0 +1,27 @@
+{
+  "hosts": {
+    "gateway": {
+      "host": "REPLACE_ME",
+      "username": "REPLACE_ME",
+      "ssh_port": 22,
+      "host_key_sha256": "REPLACE_ME",
+      "workdir": "/opt/agentdlp"
+    },
+    "external": {
+      "host": "REPLACE_ME",
+      "username": "REPLACE_ME",
+      "ssh_port": 22,
+      "host_key_sha256": "REPLACE_ME",
+      "workdir": "/opt/agentdlp"
+    },
+    "endpoint": {
+      "host": "REPLACE_ME",
+      "username": "REPLACE_ME",
+      "ssh_port": 22,
+      "host_key_sha256": "REPLACE_ME",
+      "workdir": "/opt/agentdlp"
+    }
+  },
+  "python": "python3",
+  "secrets": "environment-or-interactive-input-only"
+}

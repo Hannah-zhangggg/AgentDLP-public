@@ -1,0 +1,17 @@
+[Unit]
+Description=AgentDLP Endpoint agent-user egress policy
+Documentation=file:/etc/agentdlp/endpoint-egress.env
+Wants=network-online.target ssh.service
+After=network-online.target systemd-resolved.service auditd.service ssh.service
+ConditionPathExists=/etc/agentdlp/endpoint-egress.confirmed
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/agentdlp-endpoint-egress apply-persistent
+ExecStop=/usr/local/sbin/agentdlp-endpoint-egress remove-policy
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

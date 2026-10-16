@@ -1,0 +1,83 @@
+{
+  "E1_contract": {
+    "applicable_views": 477,
+    "case_rule_transitions": {
+      "Consistent -> Uncertain": 177,
+      "Inconsistent -> Inconsistent": 126,
+      "Inconsistent -> Uncertain": 157,
+      "Uncertain -> Uncertain": 17
+    },
+    "claim_transitions": {
+      "Consistent -> Uncertain": 20123,
+      "Inconsistent -> Uncertain": 212,
+      "Uncertain -> Uncertain": 25
+    },
+    "disabled_checks": 20360,
+    "kinds": {
+      "admission": 40,
+      "count": 4245,
+      "delivery": 4165,
+      "effect:baggage_payment_effect": 20,
+      "effect:booking_fare_matches_payment": 18,
+      "effect:booking_record_created": 18,
+      "effect:booking_user_and_payment_state": 18,
+      "effect:business_record_transition": 300,
+      "effect:business_resource_scope": 300,
+      "effect:cancel_refund_state": 22,
+      "effect:directory_existence": 300,
+      "effect:filesystem_read_has_no_content_side_effect": 2135,
+      "effect:flight_payment_effect": 43,
+      "effect:mkdir_resource_scope": 297,
+      "effect:move_resource_scope": 203,
+      "effect:move_source_to_target": 203,
+      "effect:native_return_matches_actual_record": 300,
+      "effect:tau_failed_call_effect": 13,
+      "effect:tau_read_no_state_mutation": 657,
+      "effect:write_full_content": 489,
+      "effect:write_resource_scope": 489,
+      "model_reporting": 4285,
+      "program_api_coverage": 87,
+      "program_api_result": 1713
+    },
+    "views_with_disabled_checks": 477
+  },
+  "E1_field": {
+    "applicable_views": 477,
+    "case_rule_transitions": {
+      "Consistent -> Consistent": 43,
+      "Consistent -> Uncertain": 134,
+      "Inconsistent -> Inconsistent": 186,
+      "Inconsistent -> Uncertain": 97,
+      "Uncertain -> Uncertain": 17
+    },
+    "claim_transitions": {
+      "Consistent -> Uncertain": 5835,
+      "Inconsistent -> Uncertain": 97,
+      "Uncertain -> Uncertain": 3
+    },
+    "disabled_checks": 5935,
+    "kinds": {
+      "arguments": 103,
+      "effect:baggage_payment_effect": 20,
+      "effect:booking_fare_matches_payment": 18,
+      "effect:booking_record_created": 18,
+      "effect:booking_user_and_payment_state": 18,
+      "effect:business_record_transition": 300,
+      "effect:business_resource_scope": 300,
+      "effect:cancel_refund_state": 22,
+      "effect:directory_existence": 300,
+      "effect:filesystem_read_has_no_content_side_effect": 2135,
+      "effect:flight_payment_effect": 43,
+      "effect:mkdir_resource_scope": 297,
+      "effect:move_resource_scope": 203,
+      "effect:move_source_to_target": 203,
+      "effect:native_return_matches_actual_record": 300,
+      "effect:tau_failed_call_effect": 13,
+      "effect:tau_read_no_state_mutation": 657,
+      "effect:write_full_content": 489,
+      "effect:write_resource_scope": 489,
+      "program_api_arguments": 7
+    },
+    "views_with_disabled_checks": 367
+  }
+}

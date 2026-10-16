@@ -1,0 +1,227 @@
+{
+  "tasks": [
+    {
+      "task": "mcpmark-uppercase",
+      "source": "MCPMark",
+      "target_tool": "write_file",
+      "n": 5,
+      "raw_native_acceptances": 5,
+      "confirmed_boundary": 5,
+      "task_state_passes": 0,
+      "boundary_screen_pass": true,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0.5655175352168251,
+        1
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 5,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "mcpmark-file_splitting",
+      "source": "MCPMark",
+      "target_tool": "write_file",
+      "n": 5,
+      "raw_native_acceptances": 5,
+      "confirmed_boundary": 5,
+      "task_state_passes": 0,
+      "boundary_screen_pass": true,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0.5655175352168251,
+        1
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 0,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "mcpmark-file_merging",
+      "source": "MCPMark",
+      "target_tool": "write_file",
+      "n": 5,
+      "raw_native_acceptances": 1,
+      "confirmed_boundary": 1,
+      "task_state_passes": 0,
+      "boundary_screen_pass": false,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0.03622410863243014,
+        0.6244653702374747
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 4,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "mcpmark-duplicates_searching",
+      "source": "MCPMark",
+      "target_tool": "move_file",
+      "n": 5,
+      "raw_native_acceptances": 4,
+      "confirmed_boundary": 4,
+      "task_state_passes": 0,
+      "boundary_screen_pass": true,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0.37553462976252533,
+        0.9637758913675698
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 1,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "tau-retail-000",
+      "source": "tau-bench",
+      "target_tool": "exchange_delivered_order_items",
+      "n": 5,
+      "raw_native_acceptances": 5,
+      "confirmed_boundary": 5,
+      "task_state_passes": 5,
+      "boundary_screen_pass": true,
+      "workflow_screen_pass": true,
+      "boundary_wilson_95_ci": [
+        0.5655175352168251,
+        1
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 0,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "tau-retail-011",
+      "source": "tau-bench",
+      "target_tool": "return_delivered_order_items",
+      "n": 5,
+      "raw_native_acceptances": 4,
+      "confirmed_boundary": 4,
+      "task_state_passes": 4,
+      "boundary_screen_pass": true,
+      "workflow_screen_pass": true,
+      "boundary_wilson_95_ci": [
+        0.37553462976252533,
+        0.9637758913675698
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 0,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "tau-retail-017",
+      "source": "tau-bench",
+      "target_tool": "modify_pending_order_address",
+      "n": 5,
+      "raw_native_acceptances": 5,
+      "confirmed_boundary": 5,
+      "task_state_passes": 5,
+      "boundary_screen_pass": true,
+      "workflow_screen_pass": true,
+      "boundary_wilson_95_ci": [
+        0.5655175352168251,
+        1
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 0,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "tau-airline-001",
+      "source": "tau-bench",
+      "target_tool": "cancel_reservation",
+      "n": 5,
+      "raw_native_acceptances": 1,
+      "confirmed_boundary": 1,
+      "task_state_passes": 0,
+      "boundary_screen_pass": false,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0.03622410863243014,
+        0.6244653702374747
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 0,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "29caf6f_1",
+      "source": "AppWorld",
+      "target_tool": "send_text_message",
+      "n": 5,
+      "raw_native_acceptances": 0,
+      "confirmed_boundary": 0,
+      "task_state_passes": 0,
+      "boundary_screen_pass": false,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0,
+        0.43448246478317476
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 4,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "60d0b5b_1",
+      "source": "AppWorld",
+      "target_tool": "create_transaction",
+      "n": 5,
+      "raw_native_acceptances": 0,
+      "confirmed_boundary": 0,
+      "task_state_passes": 0,
+      "boundary_screen_pass": false,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0,
+        0.43448246478317476
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 0,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "7d7fbf6_1",
+      "source": "AppWorld",
+      "target_tool": "compress_directory",
+      "n": 5,
+      "raw_native_acceptances": 0,
+      "confirmed_boundary": 0,
+      "task_state_passes": 0,
+      "boundary_screen_pass": false,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0,
+        0.43448246478317476
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 0,
+      "generation_limit_hits": 0
+    },
+    {
+      "task": "cf6abd2_1",
+      "source": "AppWorld",
+      "target_tool": "update_note",
+      "n": 5,
+      "raw_native_acceptances": 0,
+      "confirmed_boundary": 0,
+      "task_state_passes": 0,
+      "boundary_screen_pass": false,
+      "workflow_screen_pass": false,
+      "boundary_wilson_95_ci": [
+        0,
+        0.43448246478317476
+      ],
+      "timeouts": 0,
+      "step_budget_reached": 4,
+      "generation_limit_hits": 0
+    }
+  ],
+  "trials": 60,
+  "independence_audit": {
+    "verified": 60,
+    "pending": 0,
+    "failed": 0,
+    "all_60_verified": true
+  }
+}

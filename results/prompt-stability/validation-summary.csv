@@ -1,0 +1,13 @@
+task,source,target_tool,n,raw_native_acceptances,confirmed_boundary,task_state_passes,boundary_screen_pass,workflow_screen_pass,boundary_wilson_95_ci,timeouts,step_budget_reached,generation_limit_hits
+mcpmark-uppercase,MCPMark,write_file,5,5,5,0,True,False,"[0.5655175352168251, 1]",0,5,0
+mcpmark-file_splitting,MCPMark,write_file,5,5,5,0,True,False,"[0.5655175352168251, 1]",0,0,0
+mcpmark-file_merging,MCPMark,write_file,5,1,1,0,False,False,"[0.03622410863243014, 0.6244653702374747]",0,4,0
+mcpmark-duplicates_searching,MCPMark,move_file,5,4,4,0,True,False,"[0.37553462976252533, 0.9637758913675698]",0,1,0
+tau-retail-000,tau-bench,exchange_delivered_order_items,5,5,5,5,True,True,"[0.5655175352168251, 1]",0,0,0
+tau-retail-011,tau-bench,return_delivered_order_items,5,4,4,4,True,True,"[0.37553462976252533, 0.9637758913675698]",0,0,0
+tau-retail-017,tau-bench,modify_pending_order_address,5,5,5,5,True,True,"[0.5655175352168251, 1]",0,0,0
+tau-airline-001,tau-bench,cancel_reservation,5,1,1,0,False,False,"[0.03622410863243014, 0.6244653702374747]",0,0,0
+29caf6f_1,AppWorld,send_text_message,5,0,0,0,False,False,"[0, 0.43448246478317476]",0,4,0
+60d0b5b_1,AppWorld,create_transaction,5,0,0,0,False,False,"[0, 0.43448246478317476]",0,0,0
+7d7fbf6_1,AppWorld,compress_directory,5,0,0,0,False,False,"[0, 0.43448246478317476]",0,0,0
+cf6abd2_1,AppWorld,update_note,5,0,0,0,False,False,"[0, 0.43448246478317476]",0,4,0

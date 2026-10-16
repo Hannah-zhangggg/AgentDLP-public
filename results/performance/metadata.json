@@ -1,0 +1,25 @@
+{
+  "python": "3.14.4",
+  "system": "Linux",
+  "machine": "x86_64",
+  "cpu_count": 20,
+  "available_cpu_affinity": 20,
+  "scope": "WSL local normalized-evidence detector and live Hybrid timing; no VM execution",
+  "cpu_model": "12th Gen Intel(R) Core(TM) i7-12700F",
+  "kernel": "6.18.33.2-microsoft-standard-WSL2",
+  "mem_total_kib": 16231072,
+  "swap_total_kib": 4194304,
+  "monotonic_clock": {
+    "implementation": "clock_gettime(CLOCK_MONOTONIC)",
+    "monotonic": true,
+    "adjustable": false,
+    "resolution": 1e-09
+  },
+  "affinity_pinned": false,
+  "cpu_governor": "not controlled",
+  "filesystem_cache": "100-view warmup; caches not flushed; full snapshot residency not guaranteed",
+  "logical_cpus_are_not_dedicated": true,
+  "cgroup_cpu.max": null,
+  "cgroup_memory.max": null,
+  "pickle_implementation": "CPython _pickle"
+}

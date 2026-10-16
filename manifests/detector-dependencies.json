@@ -1,0 +1,159 @@
+{
+  "entry_modules": [
+    "consistency.evidence_baseline_v1.detector",
+    "consistency.benchmark_six_v1.experiment",
+    "consistency.benchmark_six_v1.encoding",
+    "consistency.benchmark_six_v1.transport",
+    "consistency.evidence_ablation_v1.projection",
+    "consistency.evidence_ablation_v2.semantics"
+  ],
+  "files": {
+    "consistency/__init__.py": "032d7b22f05268b86da294324395ae6d0d90cd748027525923b5d457c7a9908b",
+    "consistency/bc_evidence_pilot_v1/__init__.py": "425679ae4b9f6aeac6c28e59bfc9de479f1a1834c94e3c2ca8282ce883a1c37b",
+    "consistency/bc_evidence_pilot_v1/experiment.py": "25bc71418b04fe25df062acf2435c75a3d189b7eab9f2d2df3982164a75c4e48",
+    "consistency/behavior_matrix.py": "8608bbbba87a9913fb7b78ddaf8c3a06544211522cc1c492f2bc4203fd156f29",
+    "consistency/benchmark_six_v1/__init__.py": "135ec624fa3f27f6b04a55860dcfe0c378e439d49d912f6c7ff06ad3eafb01ee",
+    "consistency/benchmark_six_v1/encoding.py": "87dc74e5563fd0dfeb46c094b2b8f2c6dfc05670722e3f35267331dc607f9448",
+    "consistency/benchmark_six_v1/experiment.py": "d8aded43351c47077925031aa925caa67a2112a2ded894d3e3f1ee87d4712bd9",
+    "consistency/benchmark_six_v1/transport.py": "ccf773e2acb2adb4fa6f3e43841e130d4f8feffd17e7fa764a0d8cb073637292",
+    "consistency/dataset_v5_formal/__init__.py": "48dd9fd4744d96d1f130f246deff36c5c529b8df0a6ca3a9009f86baa1d44ad8",
+    "consistency/dataset_v5_formal/benchmark_postflight.py": "fb2ed09dccd78da5820e1a7192b1e307ac64c6d17b233dfbd2ecf6d60713ddae",
+    "consistency/dataset_v5_formal/common.py": "d52705342380a99dd747a0618aac5ce97f2f2c5a56dd4ec84771669d8f03456b",
+    "consistency/dataset_v5_formal/consolidate_benchmark.py": "ee227d8d52d4cb38199094903a581df5984a8daf4e9940dced542c210486dadb",
+    "consistency/dataset_v5_formal/consolidate_current.py": "e2e7e93668b4c2dadf596e6637122d54479f1bff4985a886f0e3440fd142c48a",
+    "consistency/dataset_v5_formal/public433_rules.py": "5a7c4359a5c0aaf44b2d179f1816a80470661e548f060ec59925eab35f40dd0d",
+    "consistency/evidence_ablation_v1/__init__.py": "df822ab9b2a728852764fd638b23ab4b6bea4c0e179fb52178fd98deac07496e",
+    "consistency/evidence_ablation_v1/projection.py": "30dfd300e416a348374d0a8ac6076645f86b34179c23d131b0640d450f620c0a",
+    "consistency/evidence_ablation_v2/__init__.py": "a13d4584f76c265c0683cc6e193bab0c9e06d60be101690f3e4e8e24779039fc",
+    "consistency/evidence_ablation_v2/semantics.py": "57b169fd0a8e9ac85fc4036b34527a803f75618564aee24dce8ea720317c0a22",
+    "consistency/evidence_baseline_v1/__init__.py": "b054654ec5f9f956ed2f09018970a4f39f841797de4b2778b810944cbb4a6110",
+    "consistency/evidence_baseline_v1/collectors.py": "982ec5e226a1f1e339ed77b345ebaeba34ae806ca33c1ef3cc831fa99050135f",
+    "consistency/evidence_baseline_v1/contracts.py": "a7102a016f48d406503c99a461b4c324f731921437773aba175d7f68726ee5e0",
+    "consistency/evidence_baseline_v1/detector.py": "f272fe8a2e0661ec5ad6f5aaeb4ebf50680eb451a1bbd4e2cbd9160a29d8480c",
+    "consistency/evidence_baseline_v1/loader.py": "a1f500bc6d49f58901432627c735ece5d1af9d6e760a24d3f3bd182ceff6dd87",
+    "consistency/evidence_baseline_v1/program.py": "b91f5498cc06fd543647cfb33efc3c2a154eda57e6e06a6539b7dd984f347d2b",
+    "consistency/evidence_pilot_v1/__init__.py": "b87d24ac628f6a32973775a60c4ffe460a0d62ee7c2fd71e2a7299152d6c0746",
+    "consistency/evidence_pilot_v1/experiment.py": "c223e2d2555b39c6bfc77a3b07b92dc79857f26bd2f28b9dadbaa10e4ffef400",
+    "consistency/evidence_pilot_v1/postflight.py": "944f18698fe561a323020feb2135c9b7bf40667e5b6cd91063eb3f071647b34f",
+    "consistency/evidence_pilot_v1/projection.py": "a9540117f3757adbd30b3cc2b41b03c842a5b5d5bbbafb21eb58d506a499b2c6",
+    "consistency/evidence_pilot_v1/routing.py": "d8e5e99d8cfca2929844beedbe53469f8836c754c2bd4b404a3141c3f943a5fe",
+    "consistency/llm_review_v1/__init__.py": "c8715422ab45ad104c1fd263675560f704cccc1c7229feae7ae3e1dfbed11749",
+    "consistency/llm_review_v1/experiment.py": "d33832f0eb8d10fa5effd110260f72483911e478a882ccfe263d3c7e34baaa11",
+    "consistency/llm_review_v1/packet.py": "103d4caafdb492393b528550e733c9f44a22dd3364e28b2074fff7f72fb85791",
+    "consistency/semantic_adapters.py": "9d3c8ee86f44da89bea7d279769861f6b0b251848a5eb0f165748c2a150aeb3f",
+    "consistency/semantic_model.py": "e1c677edd8d2df0bea0118613cfd7178f814a446a7f8e4447cff79f952d678b5"
+  },
+  "imports": {
+    "consistency.evidence_ablation_v2.semantics": [
+      "consistency.evidence_baseline_v1.collectors",
+      "consistency.evidence_baseline_v1.detector"
+    ],
+    "consistency.evidence_ablation_v2": [],
+    "consistency": [],
+    "consistency.evidence_baseline_v1.detector": [
+      "consistency.dataset_v5_formal.public433_rules",
+      "consistency.evidence_baseline_v1",
+      "consistency.evidence_baseline_v1.collectors",
+      "consistency.evidence_baseline_v1.contracts",
+      "consistency.evidence_baseline_v1.program",
+      "consistency.semantic_adapters",
+      "consistency.semantic_model"
+    ],
+    "consistency.evidence_baseline_v1": [],
+    "consistency.semantic_model": [
+      "consistency.behavior_matrix"
+    ],
+    "consistency.behavior_matrix": [],
+    "consistency.semantic_adapters": [
+      "consistency.semantic_model"
+    ],
+    "consistency.dataset_v5_formal.public433_rules": [],
+    "consistency.dataset_v5_formal": [],
+    "consistency.evidence_baseline_v1.program": [],
+    "consistency.evidence_baseline_v1.contracts": [
+      "consistency.evidence_baseline_v1.collectors"
+    ],
+    "consistency.evidence_baseline_v1.collectors": [],
+    "consistency.evidence_ablation_v1.projection": [],
+    "consistency.evidence_ablation_v1": [],
+    "consistency.benchmark_six_v1.transport": [
+      "consistency.llm_review_v1.packet"
+    ],
+    "consistency.benchmark_six_v1": [],
+    "consistency.llm_review_v1.packet": [
+      "consistency.evidence_baseline_v1.collectors"
+    ],
+    "consistency.llm_review_v1": [],
+    "consistency.benchmark_six_v1.encoding": [
+      "consistency.benchmark_six_v1.experiment"
+    ],
+    "consistency.benchmark_six_v1.experiment": [
+      "consistency.bc_evidence_pilot_v1.experiment",
+      "consistency.benchmark_six_v1.transport",
+      "consistency.dataset_v5_formal.benchmark_postflight",
+      "consistency.dataset_v5_formal.common",
+      "consistency.evidence_baseline_v1",
+      "consistency.evidence_baseline_v1.detector",
+      "consistency.evidence_baseline_v1.loader",
+      "consistency.evidence_pilot_v1.projection",
+      "consistency.llm_review_v1.packet"
+    ],
+    "consistency.evidence_baseline_v1.loader": [
+      "consistency.dataset_v5_formal.common",
+      "consistency.evidence_baseline_v1.collectors"
+    ],
+    "consistency.dataset_v5_formal.common": [],
+    "consistency.bc_evidence_pilot_v1.experiment": [
+      "consistency.evidence_baseline_v1.detector",
+      "consistency.evidence_baseline_v1.loader",
+      "consistency.evidence_pilot_v1.experiment",
+      "consistency.evidence_pilot_v1.postflight",
+      "consistency.evidence_pilot_v1.projection",
+      "consistency.evidence_pilot_v1.routing",
+      "consistency.llm_review_v1.experiment"
+    ],
+    "consistency.bc_evidence_pilot_v1": [],
+    "consistency.llm_review_v1.experiment": [
+      "consistency.dataset_v5_formal.common",
+      "consistency.evidence_baseline_v1.loader",
+      "consistency.llm_review_v1.packet"
+    ],
+    "consistency.evidence_pilot_v1.routing": [
+      "consistency.evidence_pilot_v1.experiment",
+      "consistency.llm_review_v1.experiment"
+    ],
+    "consistency.evidence_pilot_v1": [],
+    "consistency.evidence_pilot_v1.experiment": [
+      "consistency.dataset_v5_formal.common",
+      "consistency.evidence_baseline_v1.detector",
+      "consistency.evidence_baseline_v1.loader",
+      "consistency.evidence_pilot_v1.projection",
+      "consistency.llm_review_v1",
+      "consistency.llm_review_v1.experiment"
+    ],
+    "consistency.evidence_pilot_v1.projection": [
+      "consistency.evidence_baseline_v1",
+      "consistency.evidence_baseline_v1.contracts",
+      "consistency.llm_review_v1.packet"
+    ],
+    "consistency.evidence_pilot_v1.postflight": [
+      "consistency.evidence_pilot_v1.experiment"
+    ],
+    "consistency.dataset_v5_formal.benchmark_postflight": [
+      "consistency.dataset_v5_formal.common",
+      "consistency.dataset_v5_formal.consolidate_benchmark",
+      "consistency.evidence_pilot_v1.postflight"
+    ],
+    "consistency.dataset_v5_formal.consolidate_benchmark": [
+      "consistency.dataset_v5_formal.common",
+      "consistency.dataset_v5_formal.consolidate_current",
+      "consistency.evidence_pilot_v1.postflight"
+    ],
+    "consistency.dataset_v5_formal.consolidate_current": [
+      "consistency.dataset_v5_formal.common"
+    ]
+  },
+  "external_import_roots": [
+    "jsonschema"
+  ]
+}

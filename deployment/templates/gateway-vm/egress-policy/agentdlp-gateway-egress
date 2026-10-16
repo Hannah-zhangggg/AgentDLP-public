@@ -1,0 +1,597 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import ipaddress
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+
+PROGRAM = "agentdlp-gateway-egress"
+CONFIG_PATH = Path("/etc/agentdlp/gateway-egress.env")
+CONFIRMED_PATH = Path("/etc/agentdlp/gateway-egress.confirmed")
+ROLLBACK_STATE = Path("/run/agentdlp-gateway-egress.rollback-unit")
+INSTALLED_PROGRAM = Path("/usr/local/sbin/agentdlp-gateway-egress")
+INSTALLED_UNIT = Path("/etc/systemd/system/agentdlp-gateway-egress.service")
+REBOOT_ROLLBACK_SERVICE = Path("/etc/systemd/system/agentdlp-gateway-egress-reboot-rollback.service")
+REBOOT_ROLLBACK_TIMER = Path("/etc/systemd/system/agentdlp-gateway-egress-reboot-rollback.timer")
+
+INPUT_CHAIN = "AGENTDLP_GW_INPUT"
+FORWARD_CHAIN = "AGENTDLP_GW_FORWARD"
+OUTPUT_CHAIN = "AGENTDLP_GW_OUTPUT"
+CHAIN_HOOKS = {"INPUT": INPUT_CHAIN, "FORWARD": FORWARD_CHAIN, "OUTPUT": OUTPUT_CHAIN}
+
+ASSIGNMENT = re.compile(r"^([A-Z0-9_]+)=(.*)$")
+IFACE = re.compile(r"^[A-Za-z0-9_.:-]+$")
+
+
+class ConfigError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class Endpoint:
+    ip: str
+    port: int
+
+    @classmethod
+    def parse(cls, value: str) -> "Endpoint":
+        host, separator, port = value.strip().rpartition(":")
+        if not separator or not host:
+            raise ConfigError(f"endpoint must be IP:PORT: {value!r}")
+        try:
+            ipaddress.ip_address(host.strip("[]"))
+            parsed_port = int(port)
+        except ValueError as exc:
+            raise ConfigError(f"invalid endpoint: {value!r}") from exc
+        if not 1 <= parsed_port <= 65535:
+            raise ConfigError(f"endpoint port out of range: {value!r}")
+        return cls(host.strip("[]"), parsed_port)
+
+
+@dataclass(frozen=True)
+class Config:
+    agent_iface: str
+    egress_iface: str
+    management_iface: str
+    agent_cidr: str
+    management_cidr: str
+    docker_cidr: str
+    proxy_port: int
+    dns_port: int
+    controlled_redirect_port: int | None
+    remote_mcp_port: int | None
+    remote_mcp_upstream: Endpoint | None
+    ebv2_proxy_port: int | None
+    management_ssh_port: int
+    rollback_seconds: int
+    upstream_dns: tuple[str, ...]
+    allowed_upstreams: tuple[Endpoint, ...]
+    agent_direct_allow: tuple[Endpoint, ...]
+    enforce_output: bool
+
+
+def die(message: str) -> None:
+    print(f"{PROGRAM}: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+def parse_bool(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"1", "yes", "true", "on"}:
+        return True
+    if normalized in {"0", "no", "false", "off"}:
+        return False
+    raise ConfigError(f"invalid boolean: {value!r}")
+
+
+def parse_csv(value: str) -> tuple[str, ...]:
+    return tuple(item.strip() for item in value.split(",") if item.strip())
+
+
+def parse_endpoint_csv(value: str) -> tuple[Endpoint, ...]:
+    return tuple(Endpoint.parse(item) for item in parse_csv(value))
+
+
+def parse_env_file(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    with path.open(encoding="utf-8") as handle:
+        for line_number, raw in enumerate(handle, 1):
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            match = ASSIGNMENT.match(line)
+            if not match:
+                raise ConfigError(f"{path}:{line_number}: expected KEY=value")
+            key, value = match.groups()
+            if key in values:
+                raise ConfigError(f"{path}:{line_number}: duplicate key {key}")
+            values[key] = value.strip().strip("'\"")
+    return values
+
+
+def _required(values: dict[str, str], key: str) -> str:
+    if key not in values or not values[key]:
+        raise ConfigError(f"missing {key}")
+    return values[key]
+
+
+def _port(values: dict[str, str], key: str) -> int:
+    raw = _required(values, key)
+    try:
+        port = int(raw)
+    except ValueError as exc:
+        raise ConfigError(f"{key} must be numeric") from exc
+    if not 1 <= port <= 65535:
+        raise ConfigError(f"{key} out of range")
+    return port
+
+
+def _optional_port(values: dict[str, str], key: str) -> int | None:
+    raw = values.get(key, "").strip()
+    if not raw or raw == "0":
+        return None
+    return _port(values, key)
+
+
+def _cidr(values: dict[str, str], key: str) -> str:
+    raw = _required(values, key)
+    try:
+        ipaddress.ip_network(raw, strict=False)
+    except ValueError as exc:
+        raise ConfigError(f"{key} must be an IP CIDR") from exc
+    return raw
+
+
+def _iface(values: dict[str, str], key: str) -> str:
+    raw = _required(values, key)
+    if not IFACE.match(raw):
+        raise ConfigError(f"{key} has invalid interface syntax")
+    return raw
+
+
+def load_config(path: Path = CONFIG_PATH) -> Config:
+    return config_from_values(parse_env_file(path))
+
+
+def config_from_values(values: dict[str, str]) -> Config:
+    rollback_seconds = int(_required(values, "AGENTDLP_GATEWAY_ROLLBACK_SECONDS"))
+    if not 60 <= rollback_seconds <= 3600:
+        raise ConfigError("AGENTDLP_GATEWAY_ROLLBACK_SECONDS must be 60..3600")
+    upstream_dns = parse_csv(values.get("AGENTDLP_GATEWAY_UPSTREAM_DNS", ""))
+    for address in upstream_dns:
+        try:
+            ipaddress.ip_address(address)
+        except ValueError as exc:
+            raise ConfigError("AGENTDLP_GATEWAY_UPSTREAM_DNS must contain IP addresses") from exc
+    remote_mcp_port = _optional_port(values, "AGENTDLP_GATEWAY_REMOTE_MCP_PORT")
+    remote_mcp_upstream_raw = values.get("AGENTDLP_GATEWAY_REMOTE_MCP_UPSTREAM", "").strip()
+    if (remote_mcp_port is None) != (not bool(remote_mcp_upstream_raw)):
+        raise ConfigError(
+            "AGENTDLP_GATEWAY_REMOTE_MCP_PORT and "
+            "AGENTDLP_GATEWAY_REMOTE_MCP_UPSTREAM must be configured together",
+        )
+    remote_mcp_upstream = Endpoint.parse(remote_mcp_upstream_raw) if remote_mcp_upstream_raw else None
+    return Config(
+        agent_iface=_iface(values, "AGENTDLP_GATEWAY_AGENT_IFACE"),
+        egress_iface=_iface(values, "AGENTDLP_GATEWAY_EGRESS_IFACE"),
+        management_iface=_iface(values, "AGENTDLP_GATEWAY_MANAGEMENT_IFACE"),
+        agent_cidr=_cidr(values, "AGENTDLP_GATEWAY_AGENT_CIDR"),
+        management_cidr=_cidr(values, "AGENTDLP_GATEWAY_MANAGEMENT_CIDR"),
+        docker_cidr=_cidr(values, "AGENTDLP_GATEWAY_DOCKER_CIDR"),
+        proxy_port=_port(values, "AGENTDLP_GATEWAY_PROXY_PORT"),
+        dns_port=_port(values, "AGENTDLP_GATEWAY_DNS_PORT"),
+        controlled_redirect_port=_optional_port(
+            values,
+            "AGENTDLP_GATEWAY_CONTROLLED_REDIRECT_PORT",
+        ),
+        remote_mcp_port=remote_mcp_port,
+        remote_mcp_upstream=remote_mcp_upstream,
+        ebv2_proxy_port=_optional_port(values, "AGENTDLP_GATEWAY_EBV2_PROXY_PORT"),
+        management_ssh_port=int(values.get("AGENTDLP_GATEWAY_MANAGEMENT_SSH_PORT", "22")),
+        rollback_seconds=rollback_seconds,
+        upstream_dns=upstream_dns,
+        allowed_upstreams=parse_endpoint_csv(values.get("AGENTDLP_GATEWAY_ALLOWED_UPSTREAMS", "")),
+        agent_direct_allow=parse_endpoint_csv(values.get("AGENTDLP_GATEWAY_AGENT_DIRECT_ALLOW", "")),
+        enforce_output=parse_bool(values.get("AGENTDLP_GATEWAY_ENFORCE_OUTPUT", "0")),
+    )
+
+
+def build_rules(config: Config) -> dict[str, list[list[str]]]:
+    input_rules = [
+        ["-i", "lo", "-j", "ACCEPT"],
+        ["-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"],
+        ["-i", config.management_iface, "-s", config.management_cidr, "-p", "tcp", "--dport", str(config.management_ssh_port), "-m", "comment", "--comment", "AGENTDLP_GW_MANAGEMENT_SSH", "-j", "ACCEPT"],
+        ["-i", config.agent_iface, "-s", config.agent_cidr, "-p", "tcp", "--dport", str(config.proxy_port), "-m", "comment", "--comment", "AGENTDLP_GW_EXPLICIT_PROXY", "-j", "ACCEPT"],
+        ["-i", config.agent_iface, "-s", config.agent_cidr, "-p", "udp", "--dport", str(config.dns_port), "-m", "comment", "--comment", "AGENTDLP_GW_CONTROLLED_DNS_UDP", "-j", "ACCEPT"],
+        ["-i", config.agent_iface, "-s", config.agent_cidr, "-p", "tcp", "--dport", str(config.dns_port), "-m", "comment", "--comment", "AGENTDLP_GW_CONTROLLED_DNS_TCP", "-j", "ACCEPT"],
+    ]
+    if config.controlled_redirect_port is not None:
+        input_rules.append([
+            "-i", config.agent_iface,
+            "-s", config.agent_cidr,
+            "-p", "tcp",
+            "--dport", str(config.controlled_redirect_port),
+            "-m", "comment",
+            "--comment", "AGENTDLP_GW_CONTROLLED_REDIRECT_HOST",
+            "-j", "ACCEPT",
+        ])
+    if config.remote_mcp_port is not None:
+        input_rules.append([
+            "-i", config.agent_iface,
+            "-s", config.agent_cidr,
+            "-p", "tcp",
+            "--dport", str(config.remote_mcp_port),
+            "-m", "comment",
+            "--comment", "AGENTDLP_GW_SYNTHETIC_REMOTE_MCP_RELAY",
+            "-j", "ACCEPT",
+        ])
+    if config.ebv2_proxy_port is not None:
+        input_rules.append([
+            "-i", config.agent_iface, "-s", config.agent_cidr, "-p", "tcp",
+            "--dport", str(config.ebv2_proxy_port), "-m", "comment",
+            "--comment", "AGENTDLP_GW_EBV2_PROXY_HOST", "-j", "ACCEPT",
+        ])
+    input_rules.extend([
+        ["-m", "limit", "--limit", "20/second", "--limit-burst", "100", "-j", "LOG", "--log-prefix", "AGENTDLP_GW_INPUT_DENY "],
+        ["-j", "DROP"],
+    ])
+    forward_rules = [
+        ["-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"],
+        ["-i", config.agent_iface, "-s", config.agent_cidr, "-d", config.docker_cidr, "-p", "tcp", "--dport", str(config.proxy_port), "-m", "comment", "--comment", "AGENTDLP_GW_AGENT_TO_PROXY_CONTAINER", "-j", "ACCEPT"],
+    ]
+    if config.controlled_redirect_port is not None:
+        forward_rules.append([
+            "-i", config.agent_iface,
+            "-s", config.agent_cidr,
+            "-d", config.docker_cidr,
+            "-p", "tcp",
+            "--dport", str(config.controlled_redirect_port),
+            "-m", "comment",
+            "--comment", "AGENTDLP_GW_AGENT_TO_CONTROLLED_MITMPROXY",
+            "-j", "ACCEPT",
+        ])
+    if config.ebv2_proxy_port is not None:
+        forward_rules.append([
+            "-i", config.agent_iface, "-s", config.agent_cidr,
+            "-d", config.docker_cidr, "-p", "tcp",
+            "--dport", str(config.ebv2_proxy_port), "-m", "comment",
+            "--comment", "AGENTDLP_GW_AGENT_TO_EBV2_PROXY", "-j", "ACCEPT",
+        ])
+    for endpoint in config.allowed_upstreams:
+        forward_rules.append(["-s", config.docker_cidr, "-d", endpoint.ip, "-p", "tcp", "--dport", str(endpoint.port), "-m", "comment", "--comment", "AGENTDLP_GW_PROXY_UPSTREAM", "-j", "ACCEPT"])
+    for endpoint in config.agent_direct_allow:
+        forward_rules.append(["-i", config.agent_iface, "-o", config.egress_iface, "-s", config.agent_cidr, "-d", endpoint.ip, "-p", "tcp", "--dport", str(endpoint.port), "-m", "comment", "--comment", "AGENTDLP_GW_CONTROLLED_DIRECT", "-j", "ACCEPT"])
+    forward_rules.extend([
+        ["-m", "limit", "--limit", "20/second", "--limit-burst", "100", "-j", "LOG", "--log-prefix", "AGENTDLP_GW_FORWARD_DENY "],
+        ["-j", "DROP"],
+    ])
+    output_rules = [
+        ["-o", "lo", "-j", "ACCEPT"],
+        ["-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"],
+    ]
+    for address in config.upstream_dns:
+        output_rules.append(["-d", address, "-p", "udp", "--dport", "53", "-m", "comment", "--comment", "AGENTDLP_GW_UPSTREAM_DNS_UDP", "-j", "ACCEPT"])
+        output_rules.append(["-d", address, "-p", "tcp", "--dport", "53", "-m", "comment", "--comment", "AGENTDLP_GW_UPSTREAM_DNS_TCP", "-j", "ACCEPT"])
+    for endpoint in config.allowed_upstreams:
+        output_rules.append(["-d", endpoint.ip, "-p", "tcp", "--dport", str(endpoint.port), "-m", "comment", "--comment", "AGENTDLP_GW_HOST_UPSTREAM", "-j", "ACCEPT"])
+    if config.remote_mcp_upstream is not None:
+        output_rules.append([
+            "-d", config.remote_mcp_upstream.ip,
+            "-p", "tcp",
+            "--dport", str(config.remote_mcp_upstream.port),
+            "-m", "comment",
+            "--comment", "AGENTDLP_GW_SYNTHETIC_REMOTE_MCP_UPSTREAM",
+            "-j", "ACCEPT",
+        ])
+    if config.enforce_output:
+        output_rules.extend([
+            ["-m", "limit", "--limit", "20/second", "--limit-burst", "100", "-j", "LOG", "--log-prefix", "AGENTDLP_GW_OUTPUT_DENY "],
+            ["-j", "DROP"],
+        ])
+    else:
+        output_rules.append(["-j", "RETURN"])
+    return {INPUT_CHAIN: input_rules, FORWARD_CHAIN: forward_rules, OUTPUT_CHAIN: output_rules}
+
+
+def render_iptables_restore(config: Config) -> str:
+    rules = build_rules(config)
+    lines = ["*filter"]
+    for chain in (INPUT_CHAIN, FORWARD_CHAIN, OUTPUT_CHAIN):
+        lines.append(f":{chain} - [0:0]")
+    for builtin, chain in CHAIN_HOOKS.items():
+        lines.append(f"-I {builtin} 1 -j {chain}")
+    for chain, chain_rules in rules.items():
+        for rule in chain_rules:
+            lines.append("-A " + chain + " " + " ".join(rule))
+    lines.append("COMMIT")
+    return "\n".join(lines) + "\n"
+
+
+def require_root() -> None:
+    if os.geteuid() != 0:
+        die("run as root")
+
+
+def run(command: list[str], *, check: bool = True, quiet: bool = False) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    if check and result.returncode != 0:
+        if not quiet:
+            print(result.stdout, end="")
+            print(result.stderr, end="", file=sys.stderr)
+        die("command failed: " + " ".join(command))
+    return result
+
+
+def require_command(name: str) -> None:
+    if shutil.which(name) is None:
+        die(f"missing required command: {name}")
+
+
+def runtime_preflight(config: Config) -> None:
+    require_root()
+    for command in ("iptables", "ip", "systemctl"):
+        require_command(command)
+    for iface in (config.agent_iface, config.egress_iface, config.management_iface):
+        run(["ip", "link", "show", "dev", iface], quiet=True)
+    run(["iptables", "-S"], quiet=True)
+    print(
+        "preflight=pass "
+        f"agent_iface={config.agent_iface} egress_iface={config.egress_iface} "
+        f"management_iface={config.management_iface}"
+    )
+
+
+def remove_jump(builtin: str, chain: str) -> None:
+    while run(["iptables", "-C", builtin, "-j", chain], check=False).returncode == 0:
+        run(["iptables", "-D", builtin, "-j", chain])
+
+
+def remove_policy_only() -> None:
+    for builtin, chain in CHAIN_HOOKS.items():
+        remove_jump(builtin, chain)
+    for chain in (INPUT_CHAIN, FORWARD_CHAIN, OUTPUT_CHAIN):
+        run(["iptables", "-F", chain], check=False, quiet=True)
+        run(["iptables", "-X", chain], check=False, quiet=True)
+
+
+def ensure_chain(chain: str) -> None:
+    if run(["iptables", "-L", chain], check=False).returncode != 0:
+        run(["iptables", "-N", chain])
+    run(["iptables", "-F", chain])
+
+
+def populate_chains(config: Config) -> None:
+    for chain, rules in build_rules(config).items():
+        ensure_chain(chain)
+        for rule in rules:
+            run(["iptables", "-A", chain, *rule])
+
+
+def hook_chains() -> None:
+    for builtin, chain in CHAIN_HOOKS.items():
+        if run(["iptables", "-C", builtin, "-j", chain], check=False).returncode != 0:
+            run(["iptables", "-I", builtin, "1", "-j", chain])
+
+
+def apply_policy(config: Config) -> None:
+    runtime_preflight(config)
+    remove_policy_only()
+    populate_chains(config)
+    hook_chains()
+    print("policy=applied confirmation=required")
+
+
+def cancel_rollback() -> None:
+    if not ROLLBACK_STATE.exists():
+        return
+    unit = ROLLBACK_STATE.read_text(encoding="utf-8").strip()
+    if not re.match(r"^agentdlp-gateway-egress-rollback-[0-9]+$", unit):
+        die("invalid rollback unit state")
+    run(["systemctl", "stop", unit + ".timer"], check=False, quiet=True)
+    ROLLBACK_STATE.unlink(missing_ok=True)
+
+
+def arm_rollback(config: Config) -> None:
+    cancel_rollback()
+    unit = f"agentdlp-gateway-egress-rollback-{int(time.time())}"
+    ROLLBACK_STATE.write_text(unit + "\n", encoding="utf-8")
+    os.chmod(ROLLBACK_STATE, 0o600)
+    run([
+        "systemd-run",
+        "--quiet",
+        f"--unit={unit}",
+        f"--on-active={config.rollback_seconds}s",
+        str(INSTALLED_PROGRAM),
+        "auto-rollback",
+    ])
+    print(f"rollback=armed seconds={config.rollback_seconds} unit={unit}")
+
+
+def install_files(source_config: Path) -> None:
+    require_root()
+    if not source_config.is_file():
+        die("usage: agentdlp-gateway-egress install /path/to/reviewed-gateway-egress.env")
+    config = load_config(source_config)
+    Path("/etc/agentdlp").mkdir(mode=0o755, exist_ok=True)
+    shutil.copy2(source_config, CONFIG_PATH)
+    os.chmod(CONFIG_PATH, 0o600)
+    shutil.copy2(Path(__file__), INSTALLED_PROGRAM)
+    os.chmod(INSTALLED_PROGRAM, 0o755)
+    service_source = Path(__file__).resolve().with_name("agentdlp-gateway-egress.service")
+    if not service_source.is_file():
+        die("service file must be beside installer")
+    shutil.copy2(service_source, INSTALLED_UNIT)
+    os.chmod(INSTALLED_UNIT, 0o644)
+    run(["systemctl", "daemon-reload"])
+    print(f"install=complete upstreams={len(config.allowed_upstreams)} service=not-enabled")
+
+
+def confirm_policy(config: Config) -> None:
+    runtime_preflight(config)
+    for chain in (INPUT_CHAIN, FORWARD_CHAIN, OUTPUT_CHAIN):
+        run(["iptables", "-L", chain], quiet=True)
+    cancel_rollback()
+    CONFIRMED_PATH.write_text("", encoding="utf-8")
+    os.chmod(CONFIRMED_PATH, 0o600)
+    run(["systemctl", "enable", "agentdlp-gateway-egress.service"], quiet=True)
+    print("confirmation=recorded service=enabled")
+
+
+def manual_rollback(config: Config) -> None:
+    require_root()
+    cancel_rollback()
+    remove_policy_only()
+    CONFIRMED_PATH.unlink(missing_ok=True)
+    run(["systemctl", "disable", "agentdlp-gateway-egress.service"], check=False, quiet=True)
+    print("rollback=manual policy=removed service=disabled")
+
+
+def auto_rollback(config: Config) -> None:
+    require_root()
+    remove_policy_only()
+    CONFIRMED_PATH.unlink(missing_ok=True)
+    ROLLBACK_STATE.unlink(missing_ok=True)
+    run(["systemctl", "disable", "agentdlp-gateway-egress.service"], check=False, quiet=True)
+    print("rollback=automatic policy=removed service=disabled")
+
+
+def arm_reboot_rollback(config: Config) -> None:
+    require_root()
+    if not CONFIRMED_PATH.exists():
+        die("confirm live policy before arming reboot rollback")
+    REBOOT_ROLLBACK_SERVICE.write_text(
+        f"""[Unit]
+Description=Rollback AgentDLP Gateway egress policy after an unconfirmed reboot
+
+[Service]
+Type=oneshot
+ExecStart={INSTALLED_PROGRAM} reboot-rollback
+""",
+        encoding="utf-8",
+    )
+    REBOOT_ROLLBACK_TIMER.write_text(
+        f"""[Unit]
+Description=AgentDLP Gateway reboot safety timer
+
+[Timer]
+OnBootSec={config.rollback_seconds}s
+AccuracySec=1s
+Unit=agentdlp-gateway-egress-reboot-rollback.service
+
+[Install]
+WantedBy=timers.target
+""",
+        encoding="utf-8",
+    )
+    os.chmod(REBOOT_ROLLBACK_SERVICE, 0o644)
+    os.chmod(REBOOT_ROLLBACK_TIMER, 0o644)
+    run(["systemctl", "daemon-reload"])
+    run(["systemctl", "enable", "agentdlp-gateway-egress-reboot-rollback.timer"], quiet=True)
+    print(f"reboot_rollback=armed seconds_after_boot={config.rollback_seconds}")
+
+
+def disarm_reboot_rollback() -> None:
+    require_root()
+    run(["systemctl", "disable", "--now", "agentdlp-gateway-egress-reboot-rollback.timer"], check=False, quiet=True)
+    REBOOT_ROLLBACK_SERVICE.unlink(missing_ok=True)
+    REBOOT_ROLLBACK_TIMER.unlink(missing_ok=True)
+    run(["systemctl", "daemon-reload"])
+    print("reboot_rollback=disarmed")
+
+
+def reboot_rollback(config: Config) -> None:
+    require_root()
+    remove_policy_only()
+    CONFIRMED_PATH.unlink(missing_ok=True)
+    run(["systemctl", "disable", "agentdlp-gateway-egress.service"], check=False, quiet=True)
+    run(["systemctl", "disable", "agentdlp-gateway-egress-reboot-rollback.timer"], check=False, quiet=True)
+    print("rollback=reboot-timeout policy=removed service=disabled")
+
+
+def uninstall_files(config: Config | None) -> None:
+    require_root()
+    remove_policy_only()
+    run(["systemctl", "disable", "--now", "agentdlp-gateway-egress.service"], check=False, quiet=True)
+    run(["systemctl", "disable", "--now", "agentdlp-gateway-egress-reboot-rollback.timer"], check=False, quiet=True)
+    for path in (CONFIRMED_PATH, ROLLBACK_STATE, INSTALLED_UNIT, INSTALLED_PROGRAM, REBOOT_ROLLBACK_SERVICE, REBOOT_ROLLBACK_TIMER):
+        path.unlink(missing_ok=True)
+    run(["systemctl", "daemon-reload"], check=False, quiet=True)
+    retained = "yes" if CONFIG_PATH.exists() else "no"
+    print(f"uninstall=complete config_retained={retained}")
+
+
+def status_policy(config: Config) -> None:
+    require_root()
+    print(f"confirmed={'yes' if CONFIRMED_PATH.exists() else 'no'} enabled={run(['systemctl', 'is-enabled', 'agentdlp-gateway-egress.service'], check=False).stdout.strip()}")
+    for builtin, chain in CHAIN_HOOKS.items():
+        present = run(["iptables", "-C", builtin, "-j", chain], check=False).returncode == 0
+        print(f"hook {builtin}->{chain}={'present' if present else 'absent'}")
+    for chain in (INPUT_CHAIN, FORWARD_CHAIN, OUTPUT_CHAIN):
+        print(f"chain={chain}")
+        result = run(["iptables", "-S", chain], check=False)
+        print(result.stdout, end="")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Manage AgentDLP Gateway host iptables policy")
+    parser.add_argument("command", choices=[
+        "render", "install", "preflight", "apply", "apply-persistent", "confirm",
+        "status", "rollback", "auto-rollback", "arm-reboot-rollback",
+        "disarm-reboot-rollback", "reboot-rollback", "remove-policy", "uninstall",
+    ])
+    parser.add_argument("path", nargs="?")
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "render":
+            print(render_iptables_restore(load_config(Path(args.path) if args.path else CONFIG_PATH)), end="")
+            return 0
+        if args.command == "install":
+            if not args.path:
+                die("install requires a reviewed config path")
+            install_files(Path(args.path))
+            return 0
+        config = load_config()
+        if args.command == "preflight":
+            runtime_preflight(config)
+        elif args.command == "apply":
+            apply_policy(config)
+            arm_rollback(config)
+        elif args.command == "apply-persistent":
+            if not CONFIRMED_PATH.exists():
+                die("persistent apply requires prior confirmation")
+            apply_policy(config)
+        elif args.command == "confirm":
+            confirm_policy(config)
+        elif args.command == "status":
+            status_policy(config)
+        elif args.command == "rollback":
+            manual_rollback(config)
+        elif args.command == "auto-rollback":
+            auto_rollback(config)
+        elif args.command == "arm-reboot-rollback":
+            arm_reboot_rollback(config)
+        elif args.command == "disarm-reboot-rollback":
+            disarm_reboot_rollback()
+        elif args.command == "reboot-rollback":
+            reboot_rollback(config)
+        elif args.command == "remove-policy":
+            require_root()
+            remove_policy_only()
+            print("policy=removed")
+        elif args.command == "uninstall":
+            uninstall_files(config)
+        return 0
+    except ConfigError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

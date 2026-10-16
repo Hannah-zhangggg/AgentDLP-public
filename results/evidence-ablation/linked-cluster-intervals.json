@@ -1,0 +1,212 @@
+{
+  "linked_clusters": 34,
+  "method": "Join parent seeds sharing an actually reused response in the final collection; 5000 paired bootstrap draws, seed 20260920. Conditional on recorded outputs.",
+  "original_parent_clusters": 40,
+  "profiles": {
+    "E1_contract": {
+      "hybrid_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.2557651991614256,
+        "iterations": 5000,
+        "lower": -0.286231884057971,
+        "seed": 20260920,
+        "upper": -0.22274881516587677
+      },
+      "hybrid_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.29831932773109243,
+        "iterations": 5000,
+        "lower": 0.23857868020304568,
+        "seed": 20260920,
+        "upper": 0.3481781376518219
+      },
+      "rule_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.6373165618448637,
+        "iterations": 5000,
+        "lower": -0.6612244897959184,
+        "seed": 20260920,
+        "upper": -0.6075949367088608
+      },
+      "rule_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.0,
+        "iterations": 5000,
+        "lower": 0.0,
+        "seed": 20260920,
+        "upper": 0.0
+      }
+    },
+    "E1_field": {
+      "hybrid_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.07337526205450734,
+        "iterations": 5000,
+        "lower": -0.11129568106312292,
+        "seed": 20260920,
+        "upper": -0.02564102564102564
+      },
+      "hybrid_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.13445378151260504,
+        "iterations": 5000,
+        "lower": 0.08426966292134831,
+        "seed": 20260920,
+        "upper": 0.17316017316017315
+      },
+      "rule_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.44654088050314467,
+        "iterations": 5000,
+        "lower": -0.505338078291815,
+        "seed": 20260920,
+        "upper": -0.37055837563451777
+      },
+      "rule_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.0,
+        "iterations": 5000,
+        "lower": 0.0,
+        "seed": 20260920,
+        "upper": 0.0
+      }
+    },
+    "E2_binding": {
+      "hybrid_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.24947589098532494,
+        "iterations": 5000,
+        "lower": -0.295221843003413,
+        "seed": 20260920,
+        "upper": -0.1984924623115578
+      },
+      "hybrid_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.40336134453781514,
+        "iterations": 5000,
+        "lower": 0.3333333333333333,
+        "seed": 20260920,
+        "upper": 0.4574898785425101
+      },
+      "rule_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.7840670859538784,
+        "iterations": 5000,
+        "lower": -0.8364485981308412,
+        "seed": 20260920,
+        "upper": -0.7237903225806451
+      },
+      "rule_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.0,
+        "iterations": 5000,
+        "lower": 0.0,
+        "seed": 20260920,
+        "upper": 0.0
+      }
+    },
+    "E3_delivery": {
+      "hybrid_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.24109014675052412,
+        "iterations": 5000,
+        "lower": -0.2649310872894334,
+        "seed": 20260920,
+        "upper": -0.21515892420537897
+      },
+      "hybrid_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.31512605042016806,
+        "iterations": 5000,
+        "lower": 0.28627450980392155,
+        "seed": 20260920,
+        "upper": 0.3514644351464435
+      },
+      "rule_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.5324947589098532,
+        "iterations": 5000,
+        "lower": -0.5597014925373134,
+        "seed": 20260920,
+        "upper": -0.5051546391752577
+      },
+      "rule_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.0,
+        "iterations": 5000,
+        "lower": 0.0,
+        "seed": 20260920,
+        "upper": 0.0
+      }
+    },
+    "E3_effect": {
+      "hybrid_paired_accuracy_change_ci95": {
+        "clusters": 33,
+        "estimate": -0.10298102981029811,
+        "iterations": 5000,
+        "lower": -0.12536443148688048,
+        "seed": 20260920,
+        "upper": -0.0781758957654723
+      },
+      "hybrid_paired_false_C_change_ci95": {
+        "clusters": 24,
+        "estimate": 0.07428571428571429,
+        "iterations": 5000,
+        "lower": 0.0273972602739726,
+        "seed": 20260920,
+        "upper": 0.11392405063291139
+      },
+      "rule_paired_accuracy_change_ci95": {
+        "clusters": 33,
+        "estimate": -0.37398373983739835,
+        "iterations": 5000,
+        "lower": -0.41228070175438597,
+        "seed": 20260920,
+        "upper": -0.32116788321167883
+      },
+      "rule_paired_false_C_change_ci95": {
+        "clusters": 24,
+        "estimate": 0.0,
+        "iterations": 5000,
+        "lower": 0.0,
+        "seed": 20260920,
+        "upper": 0.0
+      }
+    },
+    "E4_closure": {
+      "hybrid_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.18448637316561844,
+        "iterations": 5000,
+        "lower": -0.22894736842105262,
+        "seed": 20260920,
+        "upper": -0.15
+      },
+      "hybrid_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.06722689075630252,
+        "iterations": 5000,
+        "lower": 0.030534351145038167,
+        "seed": 20260920,
+        "upper": 0.109375
+      },
+      "rule_paired_accuracy_change_ci95": {
+        "clusters": 34,
+        "estimate": -0.5073375262054507,
+        "iterations": 5000,
+        "lower": -0.5412371134020618,
+        "seed": 20260920,
+        "upper": -0.4810810810810811
+      },
+      "rule_paired_false_C_change_ci95": {
+        "clusters": 34,
+        "estimate": 0.0,
+        "iterations": 5000,
+        "lower": 0.0,
+        "seed": 20260920,
+        "upper": 0.0
+      }
+    },
+    "full": {}
+  }
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "component": "tau-bench",
+    "source": "artifacts/reports/v5-formal-sources/tau-bench/LICENSE",
+    "notice": "licenses/tau-bench/LICENSE",
+    "sha256": "243d23d45b80122b5ac575586ccef352fdc9c45e6d7d2605449aca8a17478b42",
+    "declared_license": "MIT"
+  },
+  {
+    "component": "mcpmark",
+    "source": "artifacts/reports/behavior-matrix-public-audit-v1/sources/mcpmark/LICENSE",
+    "notice": "licenses/mcpmark/LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "declared_license": "Apache-2.0"
+  },
+  {
+    "component": "appworld-data",
+    "source": "artifacts/reports/v5-formal-sources/appworld/data/LICENSE",
+    "notice": "licenses/appworld-data/LICENSE",
+    "sha256": "3786bdb398d95201c067c3b59a3943659a36783579f70ad0fab99f915b499609",
+    "declared_license": "Apache-2.0 with encrypted redistribution condition"
+  }
+]

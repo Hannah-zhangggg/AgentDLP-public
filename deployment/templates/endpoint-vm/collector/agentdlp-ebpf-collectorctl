@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+readonly CONFIG=/etc/agentdlp/ebpf-collector
+readonly STATE=/var/lib/agentdlp/ebpf-collector
+readonly CTL=/usr/local/sbin/agentdlp-ebpf-collectorctl
+readonly RUN=/usr/local/libexec/agentdlp/ebpf-collector-run
+readonly UNIT='/etc/systemd/system/agentdlp-ebpf-collector@.service'
+readonly WRAPPER=/usr/local/lib/agentdlp/ebpf_connect_core.py
+readonly LOADER=/usr/local/libexec/agentdlp/connect_observer
+readonly OBJECT=/usr/local/libexec/agentdlp/connect_observer.bpf.o
+die() { echo "agentdlp-ebpf-collectorctl: $*" >&2; exit 1; }
+root() { [[ ${EUID} -eq 0 ]] || die "run as root"; }
+valid() { [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$ ]]; }
+safe_value() { [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._:-]{0,160}$ ]]; }
+safe_group() { [[ "$1" =~ ^(preflight|A|B|C|controlled-redirect)$ ]]; }
+safe_ipv4() { [[ "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; }
+unit() { printf 'agentdlp-ebpf-collector@%s.service' "$1"; }
+install_files() {
+  repo=${1:-}; root; [[ -x "$repo/experiments/ebpf-core/connect_observer" && -f "$repo/experiments/ebpf-core/connect_observer.bpf.o" ]] || die "build loader and BPF object first"
+  source=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+  install -d -o root -g root -m 0750 "$CONFIG" "$STATE"
+  install -d -o root -g root -m 0755 /usr/local/libexec/agentdlp /usr/local/lib/agentdlp
+  install -o root -g root -m 0755 "${BASH_SOURCE[0]}" "$CTL"
+  install -o root -g root -m 0755 "$source/agentdlp-ebpf-collector-run" "$RUN"
+  install -o root -g root -m 0644 "$source/agentdlp-ebpf-collector@.service" "$UNIT"
+  install -o root -g root -m 0644 "$repo/normalization/ebpf_connect_core.py" "$WRAPPER"
+  install -o root -g root -m 0755 "$repo/experiments/ebpf-core/connect_observer" "$LOADER"
+  install -o root -g root -m 0644 "$repo/experiments/ebpf-core/connect_observer.bpf.o" "$OBJECT"
+  systemctl daemon-reload; systemd-analyze verify "$UNIT"; echo 'install=complete runtime=root-owned'
+}
+start() {
+  id=${1:-}; cgroup=${2:-}; run=${3:-}; session=${4:-}; harness=${5:-}; workload=${6:-}; group=${7:-}; source_ip=${8:-}
+  root; valid "$id" || die "invalid id"; [[ "$cgroup" == /sys/fs/cgroup/* && -d "$cgroup" ]] || die "invalid cgroup"; valid "$run" || die "invalid run id"
+  safe_value "$session" || die "invalid session id"; safe_value "$harness" || die "invalid harness id"; safe_value "$workload" || die "invalid workload id"; safe_group "$group" || die "invalid group"; safe_ipv4 "$source_ip" || die "invalid source IPv4 address"
+  [[ -x "$RUN" && -f "$WRAPPER" && -x "$LOADER" ]] || die "collector is not installed"; systemctl is-active --quiet "$(unit "$id")" && die "collector active"
+  install -d -o root -g root -m 0700 "$STATE/$id"
+  printf 'AGENTDLP_CGROUP=%s\nAGENTDLP_RUN_ID=%s\nAGENTDLP_SESSION_ID=%s\nAGENTDLP_HARNESS_ID=%s\nAGENTDLP_WORKLOAD_ID=%s\nAGENTDLP_EXPERIMENT_GROUP=%s\nAGENTDLP_SOURCE_IP=%s\n' "$cgroup" "$run" "$session" "$harness" "$workload" "$group" "$source_ip" >"$CONFIG/$id.env"
+  chmod 0600 "$CONFIG/$id.env"; systemctl start "$(unit "$id")"
+  for _ in {1..150}; do [[ -e "$STATE/$id/ready" ]] && { echo "start=ready id=$id"; return; }; systemctl is-active --quiet "$(unit "$id")" || die "collector exited before ready"; sleep .1; done
+  systemctl stop "$(unit "$id")" || true; die "collector ready timeout"
+}
+stop() { root; valid "${1:-}" || die "invalid id"; systemctl stop "$(unit "$1")"; echo "stop=complete id=$1"; }
+cleanup() { root; valid "${1:-}" || exit 0; rm -f "$CONFIG/$1.env" "$STATE/$1/ready"; }
+export_events() { id=${1:-}; dest=${2:-}; owner=${3:-}; group=${4:-}; root; valid "$id" || die "invalid id"; [[ "$dest" == /* && -d "$(dirname -- "$dest")" && "$owner" =~ ^[0-9]+$ && "$group" =~ ^[0-9]+$ ]] || die "invalid export target"; systemctl is-active --quiet "$(unit "$id")" && die "stop collector before exporting evidence"; [[ ! -L "$STATE/$id/events.jsonl" ]] || die "refusing symlink evidence"; install -o "$owner" -g "$group" -m 0640 "$STATE/$id/events.jsonl" "$dest"; echo "export=complete id=$id"; }
+case "${1:-}" in install) shift; install_files "${1:-}";; start) shift; start "$@";; stop) shift; stop "${1:-}";; export) shift; export_events "$@";; cleanup) shift; cleanup "${1:-}";; *) echo "usage: $0 {install REPO|start ID CGROUP RUN SESSION HARNESS WORKLOAD GROUP SOURCE_IP|stop ID|export ID DEST OWNER GROUP}" >&2; exit 2;; esac

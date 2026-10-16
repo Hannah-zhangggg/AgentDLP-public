@@ -1,0 +1,84 @@
+{
+  "fallback_views": 16,
+  "group_count": 7,
+  "groups": [
+    {
+      "profiles": {
+        "E3_delivery": 2
+      },
+      "response_group": "0cecf4aa0dcfbec2",
+      "truth_counts": {
+        "Consistent": 1,
+        "Inconsistent": 1
+      },
+      "views": 2
+    },
+    {
+      "profiles": {
+        "E3_effect": 2
+      },
+      "response_group": "60cdddf0cadb3c99",
+      "truth_counts": {
+        "Consistent": 1,
+        "Inconsistent": 1
+      },
+      "views": 2
+    },
+    {
+      "profiles": {
+        "E3_delivery": 3
+      },
+      "response_group": "cc5248af8bd85887",
+      "truth_counts": {
+        "Consistent": 1,
+        "Inconsistent": 2
+      },
+      "views": 3
+    },
+    {
+      "profiles": {
+        "E3_delivery": 2
+      },
+      "response_group": "16e12a734155ca77",
+      "truth_counts": {
+        "Consistent": 1,
+        "Inconsistent": 1
+      },
+      "views": 2
+    },
+    {
+      "profiles": {
+        "E3_delivery": 3
+      },
+      "response_group": "ac1eb68590e99379",
+      "truth_counts": {
+        "Consistent": 1,
+        "Inconsistent": 2
+      },
+      "views": 3
+    },
+    {
+      "profiles": {
+        "E3_delivery": 2
+      },
+      "response_group": "e26aa7f306e165fa",
+      "truth_counts": {
+        "Consistent": 1,
+        "Inconsistent": 1
+      },
+      "views": 2
+    },
+    {
+      "profiles": {
+        "E3_delivery": 2
+      },
+      "response_group": "cbe6dfa4bed543cb",
+      "truth_counts": {
+        "Consistent": 1,
+        "Inconsistent": 1
+      },
+      "views": 2
+    }
+  ],
+  "scope": "Actual model-visible packet collisions, not identity of complete raw execution evidence."
+}

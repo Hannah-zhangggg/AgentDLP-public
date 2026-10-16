@@ -1,0 +1,27 @@
+[Unit]
+Description=AgentDLP root-owned eBPF collector for workload %i
+Documentation=file:/etc/agentdlp/ebpf-collector/%i.env
+ConditionPathExists=/etc/agentdlp/ebpf-collector/%i.env
+
+[Service]
+Type=exec
+User=root
+Group=root
+UMask=0077
+ExecStart=/usr/local/libexec/agentdlp/ebpf-collector-run %i
+ExecStopPost=/usr/local/sbin/agentdlp-ebpf-collectorctl cleanup %i
+TimeoutStartSec=20
+TimeoutStopSec=10
+LimitMEMLOCK=infinity
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_BPF CAP_PERFMON CAP_NET_ADMIN CAP_DAC_READ_SEARCH
+AmbientCapabilities=CAP_BPF CAP_PERFMON CAP_NET_ADMIN CAP_DAC_READ_SEARCH
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelModules=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+ReadWritePaths=/var/lib/agentdlp/ebpf-collector /etc/agentdlp/ebpf-collector

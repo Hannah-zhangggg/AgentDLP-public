@@ -1,0 +1,16 @@
+{
+  "selection": {
+    "n": 312,
+    "correct": 250,
+    "accuracy": 0.8012820512820513,
+    "uncertain": 10,
+    "false_consistent": 13
+  },
+  "confirmation": {
+    "n": 642,
+    "correct": 528,
+    "accuracy": 0.822429906542056,
+    "uncertain": 13,
+    "false_consistent": 31
+  }
+}

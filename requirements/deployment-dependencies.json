@@ -1,0 +1,263 @@
+{
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tasks_test.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/modify_pending_order_payment.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/list_all_product_types.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/get_product_details.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/modify_pending_order_address.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/think.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/modify_pending_order_items.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/transfer_to_human_agents.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/get_user_details.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/find_user_id_by_name_zip.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/exchange_delivered_order_items.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/return_delivered_order_items.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/__init__.py": [],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/find_user_id_by_email.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/calculate.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/get_order_details.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/modify_user_address.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/tools/cancel_pending_order.py": [
+    "tau_bench"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/artifacts/reports/v5-formal-sources/tau-bench/tau_bench/envs/retail/data/__init__.py": [],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/consistency/dataset_v5_formal/backend.py": [
+    "appworld"
+  ],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/consistency/dataset_v5_formal/tau_source.py": [],
+  "deployment/frozen-live/external/v5-formal-public-r1/app/consistency/dataset_v5_formal/common.py": [],
+  "deployment/reference/normalization/proxy_bypass.py": [],
+  "deployment/reference/normalization/cli.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/ebpf_connect_core.py": [],
+  "deployment/reference/normalization/events_cli.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/tls_events.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/endpoint_events.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/__init__.py": [],
+  "deployment/reference/normalization/network_cli.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/websocket_events.py": [
+    "normalization"
+  ],
+  "deployment/reference/host/v5_vm_management_repair.py": [
+    "v5_vm_host",
+    "v5_vm_inspect"
+  ],
+  "deployment/reference/host/v5_vm_host.py": [
+    "paramiko"
+  ],
+  "deployment/reference/host/v5_vm_gateway_extract.py": [
+    "mitmproxy"
+  ],
+  "deployment/reference/host/v5_vm_stage.py": [
+    "consistency"
+  ],
+  "deployment/reference/host/v5_vm_runtime.py": [
+    "consistency"
+  ],
+  "deployment/reference/host/v5_vm_semantics.py": [
+    "consistency"
+  ],
+  "deployment/reference/host/v5_vm_inspect.py": [
+    "v5_vm_host"
+  ],
+  "deployment/reference/proxy/addons/egress_policy.py": [
+    "mitmproxy"
+  ],
+  "deployment/reference/proxy/addons/unified_events.py": [
+    "mitmproxy",
+    "normalization"
+  ],
+  "deployment/reference/proxy/addons/anthropic_sse.py": [
+    "mitmproxy",
+    "normalization"
+  ],
+  "deployment/reference/proxy/addons/gemini_sse.py": [
+    "mitmproxy",
+    "normalization"
+  ],
+  "deployment/reference/proxy/addons/tls_events.py": [
+    "mitmproxy",
+    "normalization"
+  ],
+  "deployment/reference/proxy/addons/metadata.py": [
+    "mitmproxy"
+  ],
+  "deployment/reference/proxy/addons/online_dlp.py": [
+    "detection",
+    "mitmproxy"
+  ],
+  "deployment/reference/proxy/addons/websocket_events.py": [
+    "mitmproxy",
+    "normalization"
+  ],
+  "deployment/reference/proxy/addons/mock_provider_route.py": [
+    "mitmproxy"
+  ],
+  "deployment/reference/normalization/readers/mitmproxy_flow.py": [
+    "mitmproxy",
+    "normalization"
+  ],
+  "deployment/reference/normalization/readers/__init__.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/__init__.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/core/event_schema.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/core/event_pipeline.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/core/vocabulary.py": [],
+  "deployment/reference/normalization/core/models.py": [],
+  "deployment/reference/normalization/core/__init__.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/core/event_log.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/core/pipeline.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/core/registry.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/reassembly/openai_sse.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/reassembly/anthropic_sse.py": [],
+  "deployment/reference/normalization/reassembly/gemini_sse.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/reassembly/__init__.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/model_api/events.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/model_api/anthropic_messages.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/model_api/openai_chat.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/model_api/__init__.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/model_api/common.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/model_api/gemini_generate_content.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/generic/http.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/generic/__init__.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/tool_protocol/mcp_jsonrpc.py": [
+    "normalization"
+  ],
+  "deployment/reference/normalization/adapters/tool_protocol/__init__.py": [
+    "normalization"
+  ],
+  "collectors/native/os_trace.py": [],
+  "collectors/native/collectors.py": [],
+  "collectors/native/runtime.py": [
+    "appworld",
+    "consistency"
+  ],
+  "collectors/observe/ebpf-connects.py": [
+    "normalization"
+  ],
+  "collectors/observe/stdio-mcp.py": [
+    "normalization"
+  ],
+  "collectors/observe/write-file.py": [
+    "normalization"
+  ],
+  "collectors/observe/run-command.py": [
+    "normalization"
+  ],
+  "experiments/live-cases/frozen-code/seal.py": [],
+  "experiments/live-cases/frozen-code/host.py": [
+    "v5_vm_host",
+    "v5_vm_inspect"
+  ],
+  "experiments/live-cases/frozen-code/report.py": [
+    "adapter"
+  ],
+  "experiments/live-cases/frozen-code/runtime.py": [
+    "appworld",
+    "consistency",
+    "injector",
+    "native_observer"
+  ],
+  "experiments/live-cases/frozen-code/audit.py": [
+    "adapter"
+  ],
+  "experiments/live-cases/frozen-code/cs_collectors.py": [],
+  "experiments/live-cases/frozen-code/verify.py": [
+    "adapter",
+    "consistency"
+  ],
+  "experiments/live-cases/frozen-code/campaign.py": [],
+  "experiments/live-cases/frozen-code/native_observer.py": [
+    "consistency",
+    "cs_collectors"
+  ],
+  "experiments/live-cases/frozen-code/adapter.py": [
+    "consistency"
+  ],
+  "experiments/live-cases/frozen-code/judge.py": [
+    "adapter",
+    "consistency"
+  ],
+  "experiments/live-cases/frozen-code/injector.py": [],
+  "experiments/live-cases/frozen-code/start_ollama.py": [],
+  "experiments/live-cases/frozen-code/pin_native.py": [
+    "host"
+  ]
+}

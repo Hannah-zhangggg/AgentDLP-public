@@ -1,0 +1,440 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly PROGRAM_NAME="agentdlp-endpoint-egress"
+readonly CONFIG_PATH="/etc/agentdlp/endpoint-egress.env"
+readonly CONFIRMED_PATH="/etc/agentdlp/endpoint-egress.confirmed"
+readonly ROLLBACK_STATE="/run/agentdlp-endpoint-egress.rollback-unit"
+readonly RUNTIME_NFT="/run/agentdlp-endpoint-egress.nft"
+readonly NFT_FAMILY="inet"
+readonly NFT_TABLE="agentdlp_endpoint_egress"
+readonly INSTALLED_PROGRAM="/usr/local/sbin/agentdlp-endpoint-egress"
+readonly INSTALLED_UNIT="/etc/systemd/system/agentdlp-endpoint-egress.service"
+readonly AUDIT_RULES="/etc/audit/rules.d/agentdlp-endpoint-egress.rules"
+readonly REBOOT_ROLLBACK_SERVICE="/etc/systemd/system/agentdlp-endpoint-egress-reboot-rollback.service"
+readonly REBOOT_ROLLBACK_TIMER="/etc/systemd/system/agentdlp-endpoint-egress-reboot-rollback.timer"
+
+die() {
+  printf '%s: %s\n' "$PROGRAM_NAME" "$*" >&2
+  exit 1
+}
+
+require_root() {
+  [[ ${EUID} -eq 0 ]] || die "run as root"
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
+}
+
+load_config() {
+  [[ -f "$CONFIG_PATH" ]] || die "missing $CONFIG_PATH; install a reviewed config first"
+  # The file is installed root-owned with mode 0600. It must contain assignments only.
+  # shellcheck disable=SC1090
+  source "$CONFIG_PATH"
+
+  : "${AGENTDLP_AGENT_UID:?}"
+  : "${AGENTDLP_AGENT_IFACE:?}"
+  : "${AGENTDLP_MANAGEMENT_IFACE:?}"
+  : "${AGENTDLP_MANAGEMENT_CIDR:?}"
+  : "${AGENTDLP_GATEWAY_IPV4:?}"
+  : "${AGENTDLP_PROXY_PORT:?}"
+  : "${AGENTDLP_DNS_PORT:?}"
+  AGENTDLP_REDIRECT_PORT=${AGENTDLP_REDIRECT_PORT:-0}
+  AGENTDLP_REMOTE_MCP_PORT=${AGENTDLP_REMOTE_MCP_PORT:-0}
+  AGENTDLP_EBV2_PROXY_PORT=${AGENTDLP_EBV2_PROXY_PORT:-0}
+  : "${AGENTDLP_ROLLBACK_SECONDS:?}"
+  : "${AGENTDLP_WORKSPACE:?}"
+}
+
+validate_config() {
+  [[ "$AGENTDLP_AGENT_UID" =~ ^[0-9]+$ ]] || die "AGENTDLP_AGENT_UID must be numeric"
+  (( AGENTDLP_AGENT_UID > 0 )) || die "AGENTDLP_AGENT_UID must not be root"
+  [[ -z ${AGENTDLP_WORKLOAD_CGROUP_ID:-} || "$AGENTDLP_WORKLOAD_CGROUP_ID" =~ ^[0-9]+$ ]] || die "AGENTDLP_WORKLOAD_CGROUP_ID must be numeric"
+  [[ -z ${AGENTDLP_WORKLOAD_NETNS_INODE:-} || "$AGENTDLP_WORKLOAD_NETNS_INODE" =~ ^[0-9]+$ ]] || die "AGENTDLP_WORKLOAD_NETNS_INODE must be numeric"
+  [[ "$AGENTDLP_AGENT_IFACE" =~ ^[[:alnum:]_.:-]+$ ]] || die "invalid agent interface"
+  [[ "$AGENTDLP_MANAGEMENT_IFACE" =~ ^[[:alnum:]_.:-]+$ ]] || die "invalid management interface"
+  [[ "$AGENTDLP_MANAGEMENT_CIDR" =~ ^[0-9.]+/[0-9]{1,2}$ ]] || die "management CIDR must be IPv4 CIDR"
+  [[ "$AGENTDLP_GATEWAY_IPV4" =~ ^[0-9.]+$ ]] || die "gateway must be an IPv4 address"
+  [[ "$AGENTDLP_PROXY_PORT" =~ ^[0-9]+$ ]] || die "proxy port must be numeric"
+  [[ "$AGENTDLP_DNS_PORT" =~ ^[0-9]+$ ]] || die "DNS port must be numeric"
+  [[ "$AGENTDLP_REDIRECT_PORT" =~ ^[0-9]+$ ]] || die "redirect port must be numeric"
+  [[ "$AGENTDLP_REMOTE_MCP_PORT" =~ ^[0-9]+$ ]] || die "remote MCP port must be numeric"
+  [[ "$AGENTDLP_EBV2_PROXY_PORT" =~ ^[0-9]+$ ]] || die "EBv2 proxy port must be numeric"
+  [[ "$AGENTDLP_ROLLBACK_SECONDS" =~ ^[0-9]+$ ]] || die "rollback seconds must be numeric"
+  (( AGENTDLP_PROXY_PORT > 0 && AGENTDLP_PROXY_PORT <= 65535 )) || die "invalid proxy port"
+  (( AGENTDLP_DNS_PORT > 0 && AGENTDLP_DNS_PORT <= 65535 )) || die "invalid DNS port"
+  (( AGENTDLP_REDIRECT_PORT >= 0 && AGENTDLP_REDIRECT_PORT <= 65535 )) \
+    || die "invalid redirect port"
+  (( AGENTDLP_REMOTE_MCP_PORT >= 0 && AGENTDLP_REMOTE_MCP_PORT <= 65535 )) \
+    || die "invalid remote MCP port"
+  (( AGENTDLP_EBV2_PROXY_PORT >= 0 && AGENTDLP_EBV2_PROXY_PORT <= 65535 )) \
+    || die "invalid EBv2 proxy port"
+  (( AGENTDLP_ROLLBACK_SECONDS >= 60 && AGENTDLP_ROLLBACK_SECONDS <= 3600 )) \
+    || die "rollback seconds must be between 60 and 3600"
+  [[ "$AGENTDLP_WORKSPACE" == /* ]] || die "workspace must be an absolute path"
+
+  ip link show dev "$AGENTDLP_AGENT_IFACE" >/dev/null 2>&1 \
+    || die "agent interface does not exist: $AGENTDLP_AGENT_IFACE"
+  ip link show dev "$AGENTDLP_MANAGEMENT_IFACE" >/dev/null 2>&1 \
+    || die "management interface does not exist: $AGENTDLP_MANAGEMENT_IFACE"
+  ip route get "$AGENTDLP_GATEWAY_IPV4" 2>/dev/null \
+    | grep -Fq "dev $AGENTDLP_AGENT_IFACE" \
+    || die "gateway is not routed through $AGENTDLP_AGENT_IFACE"
+  getent passwd "$AGENTDLP_AGENT_UID" >/dev/null \
+    || die "agent UID does not exist: $AGENTDLP_AGENT_UID"
+  [[ -d "$AGENTDLP_WORKSPACE" ]] || die "workspace does not exist: $AGENTDLP_WORKSPACE"
+}
+
+preflight() {
+  require_root
+  for command_name in nft ip resolvectl systemctl getent grep; do
+    require_command "$command_name"
+  done
+  load_config
+  validate_config
+  systemctl is-active --quiet systemd-resolved \
+    || die "systemd-resolved is not active"
+  systemctl is-active --quiet ssh \
+    || systemctl is-active --quiet sshd \
+    || die "SSH service is not active"
+  nft list tables >/dev/null
+  printf 'preflight=pass agent_uid=%s workload_cgroup_id=%s workload_netns_inode=%s agent_iface=%s management_iface=%s gateway=%s redirect_port=%s remote_mcp_port=%s\n' \
+    "$AGENTDLP_AGENT_UID" "${AGENTDLP_WORKLOAD_CGROUP_ID:-none}" "${AGENTDLP_WORKLOAD_NETNS_INODE:-none}" "$AGENTDLP_AGENT_IFACE" \
+    "$AGENTDLP_MANAGEMENT_IFACE" "$AGENTDLP_GATEWAY_IPV4" \
+    "$AGENTDLP_REDIRECT_PORT" "$AGENTDLP_REMOTE_MCP_PORT"
+}
+
+render_nft() {
+  local redirect_rule=
+  local remote_mcp_rule=
+  local ebv2_proxy_rule=
+  local workload_match="meta skuid ${AGENTDLP_AGENT_UID}"
+  if [[ -n ${AGENTDLP_WORKLOAD_CGROUP_ID:-} ]]; then
+    workload_match="meta cgroup ${AGENTDLP_WORKLOAD_CGROUP_ID}"
+  fi
+  if (( AGENTDLP_REDIRECT_PORT > 0 )); then
+    redirect_rule="    ${workload_match} oifname \"${AGENTDLP_AGENT_IFACE}\" ip daddr ${AGENTDLP_GATEWAY_IPV4} tcp dport ${AGENTDLP_REDIRECT_PORT} accept comment \"AgentDLP controlled eBPF redirect relay\""
+  fi
+  if (( AGENTDLP_REMOTE_MCP_PORT > 0 )); then
+    remote_mcp_rule="    ${workload_match} oifname \"${AGENTDLP_AGENT_IFACE}\" ip daddr ${AGENTDLP_GATEWAY_IPV4} tcp dport ${AGENTDLP_REMOTE_MCP_PORT} accept comment \"AgentDLP persistent synthetic remote MCP relay\""
+  fi
+  if (( AGENTDLP_EBV2_PROXY_PORT > 0 )); then
+    ebv2_proxy_rule="    ${workload_match} oifname \"${AGENTDLP_AGENT_IFACE}\" ip daddr ${AGENTDLP_GATEWAY_IPV4} tcp dport ${AGENTDLP_EBV2_PROXY_PORT} accept comment \"AgentDLP EBv2 isolated proxy\""
+  fi
+  cat >"$RUNTIME_NFT" <<EOF
+table ${NFT_FAMILY} ${NFT_TABLE} {
+  chain output {
+    type filter hook output priority -5; policy accept;
+
+    oifname "lo" accept comment "local traffic"
+    ct state established,related accept comment "preserve established SSH and responses"
+    ${workload_match} oifname "${AGENTDLP_MANAGEMENT_IFACE}" ip daddr ${AGENTDLP_MANAGEMENT_CIDR} tcp dport 22 accept comment "explicit outbound management SSH"
+    ${workload_match} oifname "${AGENTDLP_AGENT_IFACE}" ip daddr ${AGENTDLP_GATEWAY_IPV4} tcp dport ${AGENTDLP_PROXY_PORT} accept comment "AgentDLP explicit proxy"
+    ${workload_match} oifname "${AGENTDLP_AGENT_IFACE}" ip daddr ${AGENTDLP_GATEWAY_IPV4} udp dport ${AGENTDLP_DNS_PORT} accept comment "AgentDLP controlled DNS UDP"
+    ${workload_match} oifname "${AGENTDLP_AGENT_IFACE}" ip daddr ${AGENTDLP_GATEWAY_IPV4} tcp dport ${AGENTDLP_DNS_PORT} accept comment "AgentDLP controlled DNS TCP"
+${redirect_rule}
+${remote_mcp_rule}
+${ebv2_proxy_rule}
+
+    ${workload_match} udp dport 53 limit rate 20/second burst 100 packets counter log prefix "AGENTDLP_DNS_DENY " level info drop
+    ${workload_match} tcp dport 53 limit rate 20/second burst 100 packets counter log prefix "AGENTDLP_DNS_DENY " level info drop
+    ${workload_match} limit rate 20/second burst 100 packets counter log prefix "AGENTDLP_EGRESS_DENY " level info drop
+  }
+}
+EOF
+  chmod 0600 "$RUNTIME_NFT"
+  nft -c -f "$RUNTIME_NFT"
+}
+
+apply_resolver() {
+  resolvectl dns "$AGENTDLP_AGENT_IFACE" "$AGENTDLP_GATEWAY_IPV4"
+  resolvectl domain "$AGENTDLP_AGENT_IFACE" '~.'
+  resolvectl default-route "$AGENTDLP_AGENT_IFACE" yes
+  resolvectl default-route "$AGENTDLP_MANAGEMENT_IFACE" no
+  resolvectl flush-caches
+}
+
+remove_policy_only() {
+  if nft list table "$NFT_FAMILY" "$NFT_TABLE" >/dev/null 2>&1; then
+    nft delete table "$NFT_FAMILY" "$NFT_TABLE"
+  fi
+  resolvectl revert "$AGENTDLP_AGENT_IFACE" >/dev/null 2>&1 || true
+  resolvectl revert "$AGENTDLP_MANAGEMENT_IFACE" >/dev/null 2>&1 || true
+  resolvectl flush-caches >/dev/null 2>&1 || true
+  rm -f "$RUNTIME_NFT"
+}
+
+apply_policy() {
+  preflight
+  remove_policy_only
+  render_nft
+  nft -f "$RUNTIME_NFT"
+  apply_resolver
+  nft list table "$NFT_FAMILY" "$NFT_TABLE" >/dev/null
+  printf 'policy=applied resolver=%s confirmation=required\n' "$AGENTDLP_GATEWAY_IPV4"
+}
+
+cancel_rollback() {
+  local unit_name
+  [[ -f "$ROLLBACK_STATE" ]] || return 0
+  unit_name=$(<"$ROLLBACK_STATE")
+  [[ "$unit_name" =~ ^agentdlp-endpoint-egress-rollback-[0-9]+$ ]] \
+    || die "invalid rollback unit state"
+  systemctl stop "${unit_name}.timer" >/dev/null 2>&1 || true
+  rm -f "$ROLLBACK_STATE"
+}
+
+arm_rollback() {
+  local unit_name
+  cancel_rollback
+  unit_name="agentdlp-endpoint-egress-rollback-$(date +%s)"
+  printf '%s\n' "$unit_name" >"$ROLLBACK_STATE"
+  chmod 0600 "$ROLLBACK_STATE"
+  systemd-run --quiet --unit="$unit_name" \
+    --on-active="${AGENTDLP_ROLLBACK_SECONDS}s" \
+    "$INSTALLED_PROGRAM" auto-rollback
+  printf 'rollback=armed seconds=%s unit=%s\n' \
+    "$AGENTDLP_ROLLBACK_SECONDS" "$unit_name"
+}
+
+install_files() {
+  local source_config=${1:-}
+  local source_dir
+  require_root
+  [[ -n "$source_config" && -f "$source_config" ]] \
+    || die "usage: $PROGRAM_NAME install /path/to/reviewed-endpoint-egress.env"
+  source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+  [[ -f "$source_dir/agentdlp-endpoint-egress.service" ]] \
+    || die "service file must be beside the installer"
+
+  install -d -m 0755 /etc/agentdlp
+  install -m 0600 "$source_config" "$CONFIG_PATH"
+  install -m 0755 "${BASH_SOURCE[0]}" "$INSTALLED_PROGRAM"
+  install -m 0644 "$source_dir/agentdlp-endpoint-egress.service" "$INSTALLED_UNIT"
+  systemctl daemon-reload
+
+  load_config
+  validate_config
+  render_audit_rules
+  printf 'install=complete policy=not-applied service=not-enabled\n'
+}
+
+render_audit_rules() {
+  require_command augenrules
+  cat >"$AUDIT_RULES" <<EOF
+## Managed by ${PROGRAM_NAME}; records syscall metadata, not file contents.
+-a always,exit -F arch=b64 -S execve,execveat -F auid=${AGENTDLP_AGENT_UID} -F auid!=-1 -k agentdlp_exec
+-a always,exit -F arch=b64 -S connect,sendto,sendmsg -F auid=${AGENTDLP_AGENT_UID} -F auid!=-1 -k agentdlp_network
+-w ${AGENTDLP_WORKSPACE} -p rwxa -k agentdlp_workspace
+EOF
+  chmod 0600 "$AUDIT_RULES"
+  augenrules --load >/dev/null
+}
+
+confirm_policy() {
+  preflight
+  nft list table "$NFT_FAMILY" "$NFT_TABLE" >/dev/null \
+    || die "policy table is absent; apply again before confirming"
+  cancel_rollback
+  install -m 0600 /dev/null "$CONFIRMED_PATH"
+  systemctl enable agentdlp-endpoint-egress.service >/dev/null
+  printf 'confirmation=recorded service=enabled\n'
+}
+
+auto_rollback() {
+  require_root
+  load_config
+  validate_config
+  remove_policy_only
+  rm -f "$CONFIRMED_PATH" "$ROLLBACK_STATE"
+  systemctl disable agentdlp-endpoint-egress.service >/dev/null 2>&1 || true
+  printf 'rollback=automatic policy=removed service=disabled\n'
+}
+
+manual_rollback() {
+  require_root
+  load_config
+  validate_config
+  cancel_rollback
+  remove_policy_only
+  rm -f "$CONFIRMED_PATH"
+  systemctl disable agentdlp-endpoint-egress.service >/dev/null 2>&1 || true
+  printf 'rollback=manual policy=removed service=disabled\n'
+}
+
+arm_reboot_rollback() {
+  require_root
+  load_config
+  validate_config
+  [[ -f "$CONFIRMED_PATH" ]] || die "confirm the live policy before arming reboot rollback"
+  cat >"$REBOOT_ROLLBACK_SERVICE" <<EOF
+[Unit]
+Description=Rollback AgentDLP Endpoint egress policy after an unconfirmed reboot
+
+[Service]
+Type=oneshot
+ExecStart=${INSTALLED_PROGRAM} reboot-rollback
+EOF
+  cat >"$REBOOT_ROLLBACK_TIMER" <<EOF
+[Unit]
+Description=AgentDLP Endpoint reboot safety timer
+
+[Timer]
+OnBootSec=${AGENTDLP_ROLLBACK_SECONDS}s
+AccuracySec=1s
+Unit=agentdlp-endpoint-egress-reboot-rollback.service
+
+[Install]
+WantedBy=timers.target
+EOF
+  chmod 0644 "$REBOOT_ROLLBACK_SERVICE" "$REBOOT_ROLLBACK_TIMER"
+  systemctl daemon-reload
+  # Deliberately do not start this timer in the current boot.
+  systemctl enable agentdlp-endpoint-egress-reboot-rollback.timer >/dev/null
+  printf 'reboot_rollback=armed seconds_after_boot=%s\n' "$AGENTDLP_ROLLBACK_SECONDS"
+}
+
+disarm_reboot_rollback() {
+  require_root
+  systemctl disable --now agentdlp-endpoint-egress-reboot-rollback.timer \
+    >/dev/null 2>&1 || true
+  rm -f "$REBOOT_ROLLBACK_SERVICE" "$REBOOT_ROLLBACK_TIMER"
+  systemctl daemon-reload
+  printf 'reboot_rollback=disarmed\n'
+}
+
+reboot_rollback() {
+  require_root
+  load_config
+  validate_config
+  remove_policy_only
+  rm -f "$CONFIRMED_PATH"
+  systemctl disable agentdlp-endpoint-egress.service >/dev/null 2>&1 || true
+  systemctl disable agentdlp-endpoint-egress-reboot-rollback.timer \
+    >/dev/null 2>&1 || true
+  printf 'rollback=reboot-timeout policy=removed service=disabled\n'
+}
+
+remove_policy() {
+  require_root
+  load_config
+  validate_config
+  remove_policy_only
+  printf 'policy=removed\n'
+}
+
+uninstall_files() {
+  require_root
+  if [[ -f "$CONFIG_PATH" ]]; then
+    load_config
+    validate_config
+    cancel_rollback
+    remove_policy_only
+  fi
+  systemctl disable --now agentdlp-endpoint-egress.service >/dev/null 2>&1 || true
+  systemctl disable --now agentdlp-endpoint-egress-reboot-rollback.timer \
+    >/dev/null 2>&1 || true
+  rm -f "$CONFIRMED_PATH" "$AUDIT_RULES" "$INSTALLED_UNIT" "$INSTALLED_PROGRAM" \
+    "$REBOOT_ROLLBACK_SERVICE" "$REBOOT_ROLLBACK_TIMER"
+  if command -v augenrules >/dev/null 2>&1; then
+    augenrules --load >/dev/null
+  fi
+  systemctl daemon-reload
+  printf 'uninstall=complete config_retained=%s\n' "$CONFIG_PATH"
+}
+
+status_policy() {
+  local reboot_state
+  require_root
+  load_config
+  validate_config
+  printf 'table='
+  if nft list table "$NFT_FAMILY" "$NFT_TABLE" >/dev/null 2>&1; then
+    printf 'present\n'
+  else
+    printf 'absent\n'
+  fi
+  printf 'confirmed=%s enabled=%s\n' \
+    "$([[ -f "$CONFIRMED_PATH" ]] && printf yes || printf no)" \
+    "$(systemctl is-enabled agentdlp-endpoint-egress.service 2>/dev/null || true)"
+  reboot_state=$(systemctl is-enabled agentdlp-endpoint-egress-reboot-rollback.timer 2>/dev/null || true)
+  printf 'reboot_rollback=%s\n' "${reboot_state:-not-installed}"
+  resolvectl status "$AGENTDLP_AGENT_IFACE"
+}
+
+usage() {
+  cat <<EOF
+Usage:
+  $PROGRAM_NAME install /path/to/reviewed-endpoint-egress.env
+  $PROGRAM_NAME preflight
+  $PROGRAM_NAME apply
+  $PROGRAM_NAME confirm
+  $PROGRAM_NAME status
+  $PROGRAM_NAME rollback
+  $PROGRAM_NAME arm-reboot-rollback
+  $PROGRAM_NAME disarm-reboot-rollback
+  $PROGRAM_NAME uninstall
+
+Safety sequence: install -> preflight -> apply -> reconnect over SSH -> confirm.
+If reconnect fails, wait for the rollback timer or run "rollback" from the VM console.
+EOF
+}
+
+main() {
+  local command_name=${1:-}
+  case "$command_name" in
+    install)
+      shift
+      install_files "${1:-}"
+      ;;
+    preflight)
+      preflight
+      ;;
+    apply)
+      apply_policy
+      arm_rollback
+      ;;
+    apply-persistent)
+      require_root
+      [[ -f "$CONFIRMED_PATH" ]] || die "persistent apply requires prior confirmation"
+      apply_policy
+      ;;
+    confirm)
+      confirm_policy
+      ;;
+    status)
+      status_policy
+      ;;
+    rollback)
+      manual_rollback
+      ;;
+    arm-reboot-rollback)
+      arm_reboot_rollback
+      ;;
+    disarm-reboot-rollback)
+      disarm_reboot_rollback
+      ;;
+    reboot-rollback)
+      reboot_rollback
+      ;;
+    auto-rollback)
+      auto_rollback
+      ;;
+    remove-policy)
+      remove_policy
+      ;;
+    uninstall)
+      uninstall_files
+      ;;
+    help|-h|--help)
+      usage
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

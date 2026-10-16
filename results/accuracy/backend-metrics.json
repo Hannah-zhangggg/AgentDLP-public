@@ -1,0 +1,146 @@
+{
+  "deepseek": {
+    "full": {
+      "n": 477,
+      "correct": 427,
+      "accuracy": 0.8951781970649895,
+      "uncertain": 0,
+      "truth_counts": {
+        "Consistent": 239,
+        "Inconsistent": 238
+      },
+      "false_consistent": 2,
+      "consistent_correct": 191,
+      "inconsistent_correct": 236
+    },
+    "degraded": {
+      "n": 477,
+      "correct": 351,
+      "accuracy": 0.7358490566037735,
+      "uncertain": 23,
+      "truth_counts": {
+        "Inconsistent": 238,
+        "Consistent": 239
+      },
+      "false_consistent": 42,
+      "consistent_correct": 174,
+      "inconsistent_correct": 177
+    },
+    "overall": {
+      "n": 954,
+      "correct": 778,
+      "accuracy": 0.8155136268343816,
+      "uncertain": 23,
+      "truth_counts": {
+        "Consistent": 478,
+        "Inconsistent": 476
+      },
+      "false_consistent": 44,
+      "consistent_correct": 365,
+      "inconsistent_correct": 413
+    },
+    "tokens": 19692832,
+    "usage_records": 954,
+    "seconds_sum": 10151.01696735149,
+    "timing_records": 954,
+    "mean_seconds": 10.640479001416656,
+    "original_collection_bill_usd": 3.923380785570545,
+    "billing_scope": "User-reported complete original collection bill, not attributable cost for the selected 954 views."
+  },
+  "gpt": {
+    "full": {
+      "n": 477,
+      "correct": 417,
+      "accuracy": 0.8742138364779874,
+      "uncertain": 12,
+      "truth_counts": {
+        "Consistent": 239,
+        "Inconsistent": 238
+      },
+      "false_consistent": 0,
+      "consistent_correct": 182,
+      "inconsistent_correct": 235
+    },
+    "degraded": {
+      "n": 477,
+      "correct": 270,
+      "accuracy": 0.5660377358490566,
+      "uncertain": 128,
+      "truth_counts": {
+        "Inconsistent": 238,
+        "Consistent": 239
+      },
+      "false_consistent": 23,
+      "consistent_correct": 106,
+      "inconsistent_correct": 164
+    },
+    "overall": {
+      "n": 954,
+      "correct": 687,
+      "accuracy": 0.720125786163522,
+      "uncertain": 140,
+      "truth_counts": {
+        "Consistent": 478,
+        "Inconsistent": 476
+      },
+      "false_consistent": 23,
+      "consistent_correct": 288,
+      "inconsistent_correct": 399
+    },
+    "tokens": 18650014,
+    "usage_records": 954,
+    "seconds_sum": 9146.524999999996,
+    "timing_records": 954,
+    "mean_seconds": 9.587552410901463,
+    "original_collection_bill_usd": 5.77,
+    "billing_scope": "User-reported complete original collection bill, not attributable cost for the selected 954 views."
+  },
+  "glm": {
+    "full": {
+      "n": 477,
+      "correct": 426,
+      "accuracy": 0.8930817610062893,
+      "uncertain": 0,
+      "truth_counts": {
+        "Consistent": 239,
+        "Inconsistent": 238
+      },
+      "false_consistent": 1,
+      "consistent_correct": 189,
+      "inconsistent_correct": 237
+    },
+    "degraded": {
+      "n": 477,
+      "correct": 339,
+      "accuracy": 0.710691823899371,
+      "uncertain": 28,
+      "truth_counts": {
+        "Inconsistent": 238,
+        "Consistent": 239
+      },
+      "false_consistent": 32,
+      "consistent_correct": 140,
+      "inconsistent_correct": 199
+    },
+    "overall": {
+      "n": 954,
+      "correct": 765,
+      "accuracy": 0.8018867924528302,
+      "uncertain": 28,
+      "truth_counts": {
+        "Consistent": 478,
+        "Inconsistent": 476
+      },
+      "false_consistent": 33,
+      "consistent_correct": 329,
+      "inconsistent_correct": 436
+    },
+    "tokens": 18340716,
+    "usage_records": 944,
+    "seconds_sum": 56110.39699999997,
+    "timing_records": 954,
+    "mean_seconds": 58.815929769392,
+    "original_collection_bill_usd": 6.618348065886562,
+    "billing_scope": "User-reported complete original collection bill, not attributable cost for the selected 954 views."
+  }
+}

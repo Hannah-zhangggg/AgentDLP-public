@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+readonly CONFIG_ROOT=/etc/agentdlp/ebpf-collector
+readonly STATE_ROOT=/var/lib/agentdlp/ebpf-collector
+readonly LOADER=/usr/local/libexec/agentdlp/connect_observer
+readonly WRAPPER=/usr/local/lib/agentdlp/ebpf_connect_core.py
+die() { echo "agentdlp-ebpf-collector-run: $*" >&2; exit 1; }
+[[ $# -eq 1 && "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$ ]] || die "invalid collector id"
+id=$1; config="$CONFIG_ROOT/$id.env"; state="$STATE_ROOT/$id"
+[[ ${EUID} -eq 0 && -f "$config" && ! -L "$config" ]] || die "missing root-owned configuration"
+# shellcheck disable=SC1090
+source "$config"
+for v in AGENTDLP_CGROUP AGENTDLP_RUN_ID AGENTDLP_HARNESS_ID AGENTDLP_WORKLOAD_ID AGENTDLP_EXPERIMENT_GROUP; do [[ -n "${!v:-}" ]] || die "missing $v"; done
+[[ "$AGENTDLP_CGROUP" == /sys/fs/cgroup/* && -d "$AGENTDLP_CGROUP" ]] || die "invalid cgroup"
+[[ -x "$LOADER" && -f "$WRAPPER" ]] || die "collector runtime is not installed"
+install -d -o root -g root -m 0700 "$state"; rm -f "$state/ready" "$state/events.jsonl"
+export AGENTDLP_EBPF_CORE_LOADER="$LOADER"
+args=(--cgroup "$AGENTDLP_CGROUP" --output "$state/events.jsonl" --run-id "$AGENTDLP_RUN_ID" --harness-id "$AGENTDLP_HARNESS_ID" --workload-id "$AGENTDLP_WORKLOAD_ID" --experiment-group "$AGENTDLP_EXPERIMENT_GROUP" --duration 0 --ready-file "$state/ready" --mode observe)
+[[ -n "${AGENTDLP_SESSION_ID:-}" ]] && args+=(--session-id "$AGENTDLP_SESSION_ID")
+[[ -n "${AGENTDLP_SOURCE_IP:-}" ]] && args+=(--source-ip "$AGENTDLP_SOURCE_IP")
+exec /usr/bin/python3 "$WRAPPER" "${args[@]}"

@@ -1,0 +1,42 @@
+[
+  {
+    "pass": 1,
+    "views": 2862,
+    "makespan_seconds": 270.7007750499906,
+    "throughput": 10.572559311924657,
+    "cpu_seconds": 264.788152534,
+    "peak_rss_kib": 392660
+  },
+  {
+    "pass": 2,
+    "views": 2862,
+    "makespan_seconds": 272.6725354079972,
+    "throughput": 10.496106605374164,
+    "cpu_seconds": 268.39184762100007,
+    "peak_rss_kib": 424520
+  },
+  {
+    "pass": 3,
+    "views": 2862,
+    "makespan_seconds": 274.6216039430001,
+    "throughput": 10.421612716944262,
+    "cpu_seconds": 273.2979253760001,
+    "peak_rss_kib": 440924
+  },
+  {
+    "pass": 4,
+    "views": 2862,
+    "makespan_seconds": 271.687135146989,
+    "throughput": 10.534175637177638,
+    "cpu_seconds": 271.58316271399997,
+    "peak_rss_kib": 466772
+  },
+  {
+    "pass": 5,
+    "views": 2862,
+    "makespan_seconds": 266.12823203299195,
+    "throughput": 10.75421415509647,
+    "cpu_seconds": 266.01490147699997,
+    "peak_rss_kib": 466772
+  }
+]

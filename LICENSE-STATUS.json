@@ -1,0 +1,7 @@
+{
+  "project_code": "Apache-2.0 (root LICENSE)",
+  "project_documentation": "No separate license granted",
+  "numerical_result_records": "No separate license granted",
+  "upstream": "See THIRD_PARTY_NOTICES.md and licenses/inventory.json",
+  "excluded": "Protected datasets, raw evidence, model responses, figures, local audit records"
+}

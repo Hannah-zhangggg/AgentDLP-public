@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply confirmed AgentDLP Gateway host egress policy
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/agentdlp-gateway-egress apply-persistent
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
